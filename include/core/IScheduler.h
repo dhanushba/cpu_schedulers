@@ -9,6 +9,7 @@ public:
 
     // Core execution
     virtual void addProcess(const Process& p) = 0;
+    virtual void removeProcess(int pid) = 0;
     virtual void tick() = 0; 
     virtual void runOffline() = 0; 
     
