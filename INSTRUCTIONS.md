@@ -18,6 +18,7 @@ Our team is building a live CPU Scheduler simulator. The project uses C++17, sta
 2. Do NOT suggest modifications to the base interfaces (`IScheduler.h`, `Process.h`, `ExecutionRecord.h`). These files are locked by the team lead. My code must conform to the existing signatures.
 3. Only output C++ code meant for my specific assigned files: `src/core/[MyAlgorithm].cpp` and `include/core/[MyAlgorithm].h`.
 4. Use `std::unique_ptr`, `std::vector`, and standard C++ practices. No raw pointers.
+5. **Header File Restrictions:** You cannot change the public API of my assigned header file. The GUI only interacts with the base `IScheduler` interface, so adding new public functions is useless. You may ONLY add the required overridden virtual functions, plus any private helper functions and private member variables (like ready queues) needed for the internal logic.
 
 **The Interface to Implement:**
 I am responsible for inheriting from `IScheduler` and implementing these pure virtual functions:
@@ -38,7 +39,7 @@ I am strictly forbidden from committing directly to the `main` branch or pushing
 
 **How We Will Work:**
 I will tell you which specific algorithm I am assigned to build (e.g., Round Robin, Non-Preemptive SJF). 
-- First, you will explain how we will manage the internal state safely during the `tick()` loop.
+- First, you will explain how we will manage the internal state safely during the `tick()` loop, including any private helper functions we need to add to the header.
 - Second, you will help me write the `.h` and `.cpp` implementation.
 - Third, once the code is complete, you will generate the exact Git terminal commands I need to push my branch safely.
 
