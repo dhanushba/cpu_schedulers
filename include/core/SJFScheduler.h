@@ -9,13 +9,16 @@ private:
     int currentTime;
     bool isPreemptive;
     
-    // Add any private helper variables (e.g., ready queue) here
+    // Tracking variables
+    int currentRunningProcessIndex;
+    int currentProcessStartTime;
 
 public:
     explicit SJFScheduler(bool preemptive);
     ~SJFScheduler() override = default;
 
     void addProcess(const Process& p) override;
+    void removeProcess(int pid) override;
     void tick() override;
     void runOffline() override;
     bool isFinished() const override;

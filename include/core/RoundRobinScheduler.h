@@ -9,13 +9,18 @@ private:
     int currentTime;
     int timeQuantum;
     
-    // Add your ready queue and current quantum tracking variables here
+    // Tracking variables
+    std::vector<int> readyQueue;
+    int currentQuantumSpent;
+    int currentRunningProcessIndex;
+    int currentProcessStartTime;
 
 public:
     explicit RoundRobinScheduler(int quantum);
     ~RoundRobinScheduler() override = default;
 
     void addProcess(const Process& p) override;
+    void removeProcess(int pid) override;
     void tick() override;
     void runOffline() override;
     bool isFinished() const override;

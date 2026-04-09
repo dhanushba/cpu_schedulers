@@ -7,14 +7,13 @@ private:
     std::vector<Process> processes;
     std::vector<ExecutionRecord> ganttChart;
     int currentTime;
-    
-    // Add any private helper variables/queues you need here
 
 public:
     FCFSScheduler();
     ~FCFSScheduler() override = default;
 
     void addProcess(const Process& p) override;
+    void removeProcess(int pid) override;
     void tick() override;
     void runOffline() override;
     bool isFinished() const override;

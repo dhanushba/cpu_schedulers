@@ -8,12 +8,17 @@ private:
     std::vector<ExecutionRecord> ganttChart;
     int currentTime;
     bool isPreemptive;
+    
+    // Tracking variables
+    int currentRunningProcessIndex;
+    int currentProcessStartTime;
 
 public:
     explicit PriorityScheduler(bool preemptive);
     ~PriorityScheduler() override = default;
 
     void addProcess(const Process& p) override;
+    void removeProcess(int pid) override;
     void tick() override;
     void runOffline() override;
     bool isFinished() const override;
