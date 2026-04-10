@@ -10,13 +10,13 @@ private:
     std::vector<ExecutionRecord> ganttChart;
     int currentTime;
     bool isPreemptive;
-    //definition to let process work with minimum heap 
+    //definition to let process work with minimum heap needed in the implementation
     std::priority_queue<Process, std::vector<Process>, std::greater<Process>> priorityQueue;
     
     // Tracking variables
     int currentRunningProcessIndex;
     int currentProcessStartTime;
-    bool is_cpu_busy;
+   
 
 public:
     explicit PriorityScheduler(bool preemptive);
@@ -32,9 +32,9 @@ public:
     std::vector<ExecutionRecord> getGanttChart() const override;
     double getAverageWaitingTime() const override;
     double getAverageTurnaroundTime() const override;
-    // Comparison operator for priority queue
-    Process p;
-    bool operator>(const Process& other) const {
+};
+//operator need to let greater work based on what I need 
+ bool operator>(const Process& other,const Process &p)  {
         return p.priority > other.priority;
     }
-};
+
