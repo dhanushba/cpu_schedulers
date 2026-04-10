@@ -7,6 +7,7 @@ private:
     std::vector<Process> processes;
     std::vector<ExecutionRecord> ganttChart;
     int currentTime;
+    bool isSorted;
 
 public:
     FCFSScheduler();
