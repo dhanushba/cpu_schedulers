@@ -10,7 +10,7 @@ private:
     std::vector<ExecutionRecord> ganttChart;
     int currentTime;
     bool isPreemptive;
-    //definition to let process work with minimum heap 
+    //definition to let process work with minimum heap needed in the implementation
     std::priority_queue<Process, std::vector<Process>, std::greater<Process>> priorityQueue;
     
     // Tracking variables
