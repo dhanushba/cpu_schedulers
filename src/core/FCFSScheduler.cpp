@@ -52,7 +52,14 @@ void FCFSScheduler::tick() {
 
         current->remainingTime--;
 
-       ganttChart.push_back(ExecutionRecord(current->pid, currentTime, currentTime + 1));
+    if (!ganttChart.empty() && ganttChart.back().pid == current->pid)
+        {
+    ganttChart.back().endTime++;
+        }
+    else
+        {
+        ganttChart.emplace_back(current->pid, currentTime, currentTime + 1);
+        }
        //
         if (current->remainingTime == 0) {
             current->isFinished = true;
@@ -65,13 +72,19 @@ void FCFSScheduler::tick() {
                 current->turnaroundTime - current->burstTime;
         }
     } else {
-        ganttChart.push_back(ExecutionRecord(-1, currentTime, currentTime + 1));//-1 as pid if no processes left
+    if (!ganttChart.empty() && ganttChart.back().pid == -1) {
+    ganttChart.back().endTime++;
+}
+ else {
+    ganttChart.emplace_back(-1, currentTime, currentTime + 1);
+}
     }
 
     currentTime++;
 }
 //
 void FCFSScheduler::runOffline() {
+    ganttChart.clear();
 if (!isSorted) {
     sort(processes.begin(), processes.end(),
         [](const Process& a, const Process& b) {
