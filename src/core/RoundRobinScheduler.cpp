@@ -102,6 +102,19 @@ void RoundRobinScheduler::tick() {
       currentProcessStartTime = -1;
       currentQuantumSpent = 0;
     } else if (currentQuantumSpent == timeQuantum) {
+      // Check  if there was an added process at this same moment, if there is a
+      // new process add it to the ready queue before adding the process that
+      // was running to the back of the queue
+      for (size_t i = 0; i < processes.size(); i++) {
+        if (!processes[i].hasStarted && !processes[i].isFinished &&
+            processes[i].arrivalTime == currentTime) {
+          // if there is a process that hasn't started (Just Got Added) add it
+          // to the ready queue and mark it as started.
+          readyQueue.push_back(i);
+          processes[i].hasStarted = true;
+        }
+      }
+
       readyQueue.push_back(currentRunningProcessIndex);
       currentRunningProcessIndex = -1;
       currentProcessStartTime = -1;
