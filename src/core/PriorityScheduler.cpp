@@ -16,6 +16,8 @@ void  PriorityScheduler::tick(){
         if(processes[i].arrivalTime==currentTime){
             priorityQueue.push(processes[i]);//add it now in the ready queue
         } }
+        //create VARIABLE HOLDS CURRENT PROCESS PID
+        int currentPID=-1; //default
     //if CPU IS IDLE
     //That means current index=-1 
     if(currentRunningProcessIndex==-1){
@@ -29,26 +31,21 @@ void  PriorityScheduler::tick(){
             currentRunningProcessIndex=i;//it actually holds the process that's working on cpu to hold it's index in the vector
             //so that if i want to access the current process through the current process index
             break;}}
-           currentProcessStartTime=currentTime;//the start time of process
-            //REMAIN TIME OF PROCESS=BURST AT FIRST AND THEN IT WILL BE DECREMENETED
-           // processes[currentRunningProcessIndex].remainingTime=processes[currentRunningProcessIndex].burstTime;}
+           currentPID=processes[currentRunningProcessIndex].pid;
            }}
              ///////////if NOT IDLE
 else{ 
+    currentPID=processes[currentRunningProcessIndex].pid; //GET THE process PID current working 
      processes[currentRunningProcessIndex].remainingTime--;//DECREMENT PROCESS WORKING RIGHT NOW
 
      //if the remaining time ==0 in any case preemptive or nott
      if(processes[currentRunningProcessIndex].remainingTime==0){
-        //this process has just finished id+start+end
-        ganttChart.push_back(ExecutionRecord(processes[currentRunningProcessIndex].pid,currentProcessStartTime,currentTime+1));
         //return cpu to IDLE AGAIN
         currentRunningProcessIndex=-1;//IDLE CPU AGAIN!
      }
      //check it's preemptive and queue not empty
      else if(isPreemptive&&!priorityQueue.empty()){
       if(priorityQueue.top().priority<processes[currentRunningProcessIndex].priority){
-        //add it on the ganttchart
-        ganttChart.push_back(ExecutionRecord(processes[currentRunningProcessIndex].pid,currentProcessStartTime,currentTime+1));
         //the process exit in the queue higher in priority than the current running process
         //add the current process in the queue
         priorityQueue.push(processes[currentRunningProcessIndex]);//add the process in the queue
@@ -59,15 +56,22 @@ else{
                 currentRunningProcessIndex=i;
                 break;
             }}
-            currentProcessStartTime=currentTime+1;
             priorityQueue.pop();//remove it it works now on cpu we don't need it in QUEUE
       }}
      
              /*ADAM'S LOGIC FOR NON PREEMPTIVE*/
     }
 
-
+//GANTTCHART IMPLEMENTATION
+if(!ganttChart.empty()&&ganttChart.back().pid==currentPID){
+    ganttChart.back().endTime=currentTime+1;//stretching the interval of this process
+}
+else{
+    //no this is NEW PROCESS ADD IT
+    ganttChart.push_back(ExecutionRecord(currentPID, currentTime, currentTime + 1));
+}
 currentTime++;
+
 }
 
 
