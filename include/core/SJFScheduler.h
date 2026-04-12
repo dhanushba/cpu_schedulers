@@ -8,6 +8,7 @@ private:
     std::vector<Process> processes; 
     std::vector<ExecutionRecord> ganttChart;
 
+    //ready queue for every second
     std::priority_queue<Process, std::vector<Process>, std::greater<Process>> priorityQ; 
 
     int currentTime;
@@ -32,15 +33,11 @@ public:
     double getAverageWaitingTime() const override;
     double getAverageTurnaroundTime() const override;
 
-    //overriding greater operator to edit PQ sorting algo.
+    //overriding greater operator to edit priority queue's sorting algorithm
     bool operator>(const Process & RHS) const;
     int getTopProcessIndex();
 };
 
 
-    bool operator>(const Process & LHS, const Process & RHS) {
-        return LHS.remainingTime < RHS.remainingTime; //sorting by least-remaining-time first
-    }
+
   
-    ///update changes////////
-    //changes//
