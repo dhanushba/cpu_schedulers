@@ -5,68 +5,72 @@ using namespace std;
 
 SJFScheduler::SJFScheduler(bool preemptive) : 
      currentTime(0), isPreemptive(preemptive), 
-     currentRunningProcessIndex(-1), //idel CPU 
+     currentRunningProcessIndex(-1), //idle CPU 
      currentProcessStartTime(0) {}
 
-void SJFScheduler::addProcess(Process& p){
-    p.remainingTime = p.burstTime;
+void SJFScheduler::addProcess(const Process& p){
     processes.push_back(p);
 }
 
 
 void SJFScheduler::tick(){
-    //BY REFERENCE 
-    for(auto &p : processes){ //currenttime is 0 at constructing the sched
-         if(p.arrivalTime == currentTime)  // for every new arrived process
-         {
-            priorityQ.push(p);   //ready processes
-         }
+    //for every new arrived process, push it to the ready queue
+    for (int i = 0; i < processes.size(); i++)
+    {
+        if(processes[i].arrivalTime == currentTime){
+           priorityQ.push(processes[i]);   //ready processes
+        }
     }
     
-    //if cpu is idel, run the top process in priority q
+    //if CPU is idle, run the top process in priority queue
     if(!priorityQ.empty() && currentRunningProcessIndex == -1) {  
         currentRunningProcessIndex = getTopProcessIndex();
         priorityQ.pop();
 
         if(processes[currentRunningProcessIndex].hasStarted == 0){
             processes[currentRunningProcessIndex].hasStarted = 1;
-            //currentProcessStartTime = currentTime;
-        }
-    }
-
-    //if cpu is not idle, updating time is needed
-    if(currentRunningProcessIndex != -1){
-        processes[currentRunningProcessIndex].remainingTime--; // but still in PQ 
-        if(processes[currentRunningProcessIndex].remainingTime == 0){ 
-            //finished //cpu is idle now
-            processes[currentRunningProcessIndex].isFinished = 1;
-            processes[currentRunningProcessIndex].completionTime = currentTime + 1;//it's the last tick
-            processes[currentRunningProcessIndex].turnaroundTime = processes[currentRunningProcessIndex].completionTime - processes[currentRunningProcessIndex].arrivalTime; 
-            processes[currentRunningProcessIndex].waitingTime = processes[currentRunningProcessIndex].turnaroundTime - processes[currentRunningProcessIndex].burstTime;
-            currentRunningProcessIndex = -1; 
         }
     }
  
-    //not finished yet:
-    if(currentRunningProcessIndex != -1 && isPreemptive && !priorityQ.empty()){ //comparision needed
-        if(processes[getTopProcessIndex()].remainingTime < processes[currentRunningProcessIndex].remainingTime){
-            priorityQ.push(processes[currentRunningProcessIndex]); //pushed to wait again
+    //Preemptive Scheduling:
+    //if CPU is NOT idle and the process hasn't finished yet: 
+    //Compare the current process's remaining time with the top of priority queue's remaining time
+    if(!priorityQ.empty() && currentRunningProcessIndex != -1 && isPreemptive){ 
+        if(priorityQ.top().remainingTime < processes[currentRunningProcessIndex].remainingTime){
+            //push the current process to wait again in the ready queue
+            priorityQ.push(processes[currentRunningProcessIndex]); 
+            //run the one of the shortest remaining time now
             currentRunningProcessIndex = getTopProcessIndex();
             priorityQ.pop();
             
              if(processes[currentRunningProcessIndex].hasStarted == 0){
                 processes[currentRunningProcessIndex].hasStarted = 1;
-                //currentProcessStartTime = currentTime;
             }
         }
+        //if they are equal, let the running process continue 
     }
     
+    //Gantt Chart:
     if(currentRunningProcessIndex != -1){
-    //to not slice the same process:
+        //Check if it's the same process running before,
         if(!ganttChart.empty() && ganttChart.back().pid == processes[currentRunningProcessIndex].pid)
-            ganttChart.back().endTime = currentTime + 1;
+            ganttChart.back().endTime++;
         else
             ganttChart.push_back(ExecutionRecord (processes[currentRunningProcessIndex].pid, currentTime, currentTime + 1));
+        
+        //UPDATE REMAINING TIME FOR THIS PROCESS
+        processes[currentRunningProcessIndex].remainingTime--; 
+
+        //IF IT'S THE LAST TIME FOR THIS PROCESS TO RUN 
+        if(processes[currentRunningProcessIndex].remainingTime == 0){ 
+            //this process has finished //CPU is idle for the next tick
+            processes[currentRunningProcessIndex].isFinished = 1;
+            processes[currentRunningProcessIndex].completionTime = currentTime + 1;// the "end time" of the chart
+            //Calculating turnaroundTime & waitingTime for this process
+            processes[currentRunningProcessIndex].turnaroundTime = processes[currentRunningProcessIndex].completionTime - processes[currentRunningProcessIndex].arrivalTime; 
+            processes[currentRunningProcessIndex].waitingTime = processes[currentRunningProcessIndex].turnaroundTime - processes[currentRunningProcessIndex].burstTime;
+            currentRunningProcessIndex = -1; 
+        }
     }
     
     currentTime++;
@@ -80,6 +84,7 @@ int SJFScheduler::getTopProcessIndex(){
             return i;
         }
     }
+    return -1;
 }
 
 bool SJFScheduler::isFinished() const{
@@ -92,6 +97,8 @@ bool SJFScheduler::isFinished() const{
 }
 
 void SJFScheduler::runOffline(){
+    //tick is meant for this function 
+    //while all processes have not finished
     while(!isFinished())
         tick();
 }
@@ -99,10 +106,10 @@ void SJFScheduler::runOffline(){
 vector<Process> SJFScheduler::getProcesses() const{
     return processes;
 }
+
 vector<ExecutionRecord> SJFScheduler::getGanttChart() const{
     return ganttChart; 
 }
-
 
 double SJFScheduler::getAverageWaitingTime() const{
     if(processes.empty()) return 0;
@@ -113,6 +120,7 @@ double SJFScheduler::getAverageWaitingTime() const{
 
     return totalWaitingTime / processes.size();
 }
+
 double SJFScheduler::getAverageTurnaroundTime() const {
     if(processes.empty()) return 0;
     double totalTurnaroundTime = 0;
@@ -123,7 +131,6 @@ double SJFScheduler::getAverageTurnaroundTime() const {
     return totalTurnaroundTime / processes.size();
 }
 
-
 void SJFScheduler::removeProcess(int pid){
     for (int i = 0; i < processes.size(); i++)
     {
@@ -131,7 +138,7 @@ void SJFScheduler::removeProcess(int pid){
             if(currentRunningProcessIndex == i) currentRunningProcessIndex = -1;
             else if(currentRunningProcessIndex > i) currentRunningProcessIndex--; //shifting
             processes.erase(processes.begin() + i);
-            //so we need to erase it from PQ too
+            //so we need to erase it from the ready queue, too
             std::priority_queue<Process, std::vector<Process>, std::greater<Process>> priorityQ2;
             while (!priorityQ.empty()){
                 if(priorityQ.top().pid != pid) {
@@ -139,8 +146,14 @@ void SJFScheduler::removeProcess(int pid){
                     }
                     priorityQ.pop();
                 }
-            priorityQ = priorityQ2; //update it
+            priorityQ = priorityQ2; //update priority queue
             break;
         }
     } 
+}
+
+
+//sorting by least-remaining-time first
+bool operator>(const Process & LHS, const Process & RHS) {
+    return LHS.remainingTime > RHS.remainingTime; 
 }
