@@ -17,13 +17,26 @@ void PriorityScheduler::tick() {
   if (isFinished())
     return; // scheduler has ended
 
-  // add the processes in the PRIORITY QUEUE THAT MATCHES THE SAME CURRENT TIME
-  // NOW
-  for (int i = 0; i < processes.size(); ++i) {
-    if (!processes[i].hasStarted && !processes[i].isFinished &&
-        processes[i].arrivalTime == currentTime) {
-      priorityQueue.push(processes[i]); // add it now in the ready queue
+  auto isRunnablePid = [this](int pid) -> bool {
+    for (const auto &p : processes) {
+      if (p.pid == pid)
+        return !p.isFinished && p.remainingTime > 0;
     }
+    return false; // pid was deleted
+  };
+
+  // add the processes in the PRIORITY QUEUE THAT MATCHES THE SAME CURRENT TIME
+  for (int i = 0; i < processes.size(); ++i) {
+    // accepting already-arrived tasks.
+    if (!processes[i].hasStarted && !processes[i].isFinished &&
+        processes[i].arrivalTime <= currentTime) {
+      priorityQueue.push(processes[i]); // add it now in the ready queue
+      processes[i].hasStarted = true;
+    }
+  }
+
+  while (!priorityQueue.empty() && !isRunnablePid(priorityQueue.top().pid)) {
+    priorityQueue.pop();
   }
 
   // if CPU IS IDLE
@@ -49,6 +62,10 @@ void PriorityScheduler::tick() {
   }
   ///////////if NOT IDLE
   else {
+    while (!priorityQueue.empty() && !isRunnablePid(priorityQueue.top().pid)) {
+      priorityQueue.pop();
+    }
+
     // check it's preemptive and queue not empty
     if (isPreemptive && !priorityQueue.empty()) {
       if (priorityQueue.top().priority <
@@ -71,7 +88,6 @@ void PriorityScheduler::tick() {
         }
       }
     }
-    /*ADAM'S LOGIC FOR NON PREEMPTIVE*/
   }
 
   int currentPID = -1;
@@ -93,7 +109,7 @@ void PriorityScheduler::tick() {
 
   // if the remaining time ==0 in any case preemptive or nott
   if (currentRunningProcessIndex != -1 &&
-      processes[currentRunningProcessIndex].remainingTime == 0) {
+      processes[currentRunningProcessIndex].remainingTime <= 0) {
     // first we need to computer everything about this process
     processes[currentRunningProcessIndex].completionTime =
         currentTime + 1; // it will finish it's round in the next tick
@@ -127,8 +143,8 @@ void PriorityScheduler::runOffline() {
 bool PriorityScheduler::isFinished() const {
   if (processes.empty())
     return true; // all processes has ended
-  for (auto &p : processes) {
-    if (!p.isFinished) {
+  for (const auto &p : processes) {
+    if (!p.isFinished && p.remainingTime > 0) {
       return false; // there is still process hasn't finished so scheduler is
                     // active
     }
@@ -182,14 +198,14 @@ void PriorityScheduler::removeProcess(int pid) {
         // what about the process we have removed from vector was also in the
         // ready queue? erase it from ready queue too create another queue
         std::priority_queue<Process, std::vector<Process>,
-                            std::greater<Process>>
+                            PriorityScheduler::PriorityCompare>
             priorityQueue_extra;
         while (!priorityQueue.empty()) {
           if (priorityQueue.top().pid != pid) {
             // add all in this new priority queue except this pid
             priorityQueue_extra.push(priorityQueue.top());
-            priorityQueue.pop();
           }
+          priorityQueue.pop();
         }
         priorityQueue = priorityQueue_extra; // THIS NEW ONE WITHOUT THE EXACT
                                              // PID "REMOVED ONE"
@@ -198,7 +214,4 @@ void PriorityScheduler::removeProcess(int pid) {
       }
     }
   }
-}
-bool operator>(const Process &a, const Process &b) {
-  return a.priority > b.priority;
 }
