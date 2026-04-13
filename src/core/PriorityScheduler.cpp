@@ -3,7 +3,7 @@
 using namespace std;
 // constructor
 //COMPLETE IMPLEMENTATION
-PriorityScheduler::PriorityScheduler(bool preemptive)
+ explicit PriorityScheduler:: PriorityScheduler(bool preemptive)
     : currentTime(0), isPreemptive(preemptive), currentProcessStartTime(0),
       currentRunningProcessIndex(-1) {}
 // add process in the vector
