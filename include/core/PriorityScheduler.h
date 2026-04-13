@@ -33,8 +33,5 @@ public:
     double getAverageWaitingTime() const override;
     double getAverageTurnaroundTime() const override;
 };
-//operator need to let greater work based on what I need 
- bool operator>(const Process& other,const Process &p)  {
-        return p.priority > other.priority;
-    }
-
+ bool operator>(const Process& a, const Process& b);
+ //make the implementation of operator in cpp file since i will work on it on different queues
