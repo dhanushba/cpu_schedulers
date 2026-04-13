@@ -62,7 +62,7 @@ void RoundRobinScheduler::tick() {
 
   for (size_t i = 0; i < processes.size(); i++) {
     if (!processes[i].hasStarted && !processes[i].isFinished &&
-        processes[i].arrivalTime == currentTime) {
+        processes[i].arrivalTime <= currentTime) {
       // if there is a process that hasn't started (Just Got Added) add it to
       // the ready queue and mark it as started.
       readyQueue.push_back(i);
@@ -120,7 +120,7 @@ void RoundRobinScheduler::tick() {
       // was running to the back of the queue
       for (size_t i = 0; i < processes.size(); i++) {
         if (!processes[i].hasStarted && !processes[i].isFinished &&
-            processes[i].arrivalTime == currentTime) {
+            processes[i].arrivalTime <= currentTime) {
           // if there is a process that hasn't started (Just Got Added) add it
           // to the ready queue and mark it as started.
           readyQueue.push_back(i);
