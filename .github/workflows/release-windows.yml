@@ -1,0 +1,46 @@
+name: Release Windows Portable
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: "6.7.2"
+          arch: "win64_msvc2022_64"
+
+      - name: Configure
+        shell: pwsh
+        run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="$env:Qt6_DIR"
+
+      - name: Build
+        shell: pwsh
+        run: cmake --build build
+
+      - name: Create portable folder
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist/CPUScheduler-portable | Out-Null
+          Copy-Item build/CPUScheduler.exe dist/CPUScheduler-portable/
+          windeployqt --release --compiler-runtime --no-translations dist/CPUScheduler-portable/CPUScheduler.exe
+          Compress-Archive -Path dist/CPUScheduler-portable/* -DestinationPath dist/CPUScheduler-portable-win64-msvc.zip -Force
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/CPUScheduler-portable-win64-msvc.zip
+          generate_release_notes: true
