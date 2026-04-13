@@ -1,11 +1,16 @@
 #pragma once
 #include "IScheduler.h"
 #include <vector>
+#include <queue>
 
 class SJFScheduler : public IScheduler {
 private:
-    std::vector<Process> processes;
+    std::vector<Process> processes; 
     std::vector<ExecutionRecord> ganttChart;
+
+    //ready queue for every second
+    std::priority_queue<Process, std::vector<Process>, std::greater<Process>> priorityQ; 
+
     int currentTime;
     bool isPreemptive;
     
@@ -27,4 +32,12 @@ public:
     std::vector<ExecutionRecord> getGanttChart() const override;
     double getAverageWaitingTime() const override;
     double getAverageTurnaroundTime() const override;
+
+    //overriding greater operator to edit priority queue's sorting algorithm
+    bool operator>(const Process & RHS) const;
+    int getTopProcessIndex();
 };
+
+
+
+  

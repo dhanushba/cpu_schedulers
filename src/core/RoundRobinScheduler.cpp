@@ -3,10 +3,14 @@
 #include <iostream>
 
 RoundRobinScheduler::RoundRobinScheduler(int quantum)
+    // initialize scheduler clock and RR configuration.
+    // set process trackers to invalid state as CPU starts idle.
     : currentTime(0), timeQuantum(quantum), currentProcessStartTime(-1),
       currentRunningProcessIndex(-1), currentQuantumSpent(0) {}
 
 void RoundRobinScheduler::addProcess(const Process &p) {
+  // append process to the internal process table.
+  // it will be admitted to ready queue when arrival condition is met in tick.
   processes.push_back(p);
 }
 
@@ -26,19 +30,28 @@ void RoundRobinScheduler::removeProcess(int pid) {
       currentRunningProcessIndex = -1;
       currentQuantumSpent = 0;
     } else if (index < currentRunningProcessIndex) {
+      // if an earlier element is removed, shift running index left to stay
+      // valid.
       currentRunningProcessIndex--;
     }
 
+    // remove process from the process table.
     processes.erase(it);
+
+    // rebuild ready queue while fixing indices after erase.
+    // skip the removed process if it was queued.
     std::vector<int> newReadyQueue;
     for (auto idx : readyQueue) {
       if (idx == index)
         continue;
       if (idx > index)
+        // all indices after removed element shift by -1.
         newReadyQueue.push_back(idx - 1);
       else
+        // indices before removed element remain unchanged.
         newReadyQueue.push_back(idx);
     }
+    // commit updated ready queue.
     readyQueue = newReadyQueue;
   }
 }
@@ -122,36 +135,59 @@ void RoundRobinScheduler::tick() {
     }
   } else {
     currentTime++;
+    // Add a slice to indicate that this is an idle time.
+    if (!ganttChart.empty() && ganttChart.back().pid == -1) {
+      ganttChart.back().endTime = currentTime;
+    } else {
+      ganttChart.emplace_back(
+          -1, currentTime - 1,
+          currentTime); // If the gantt chart was empty or the last process that
+                        // appeared on the chart wasn't the current process
+                        // create another object of the execution record of the
+                        // process that will take its part on the chart.
+                        // "emplace_back" creates and object and pushes it into
+                        // the queue
+    }
   }
 }
 
 void RoundRobinScheduler::runOffline() {
+  // repeatedly call tick until all processes are completed.
   while (!isFinished()) {
     tick();
   }
 }
 
 bool RoundRobinScheduler::isFinished() const {
+  // no work to do if process table is empty.
   if (processes.empty())
     return true;
+
+  // if any process is not finished, scheduler is still active.
   for (auto p : processes) {
     if (!p.isFinished)
       return false;
   }
+  // all processes finished.
   return true;
 }
 
 std::vector<Process> RoundRobinScheduler::getProcesses() const {
+  // return a snapshot copy of current process states and metrics.
   return processes;
 }
 
 std::vector<ExecutionRecord> RoundRobinScheduler::getGanttChart() const {
+  // return a snapshot copy of the executed timeline records.
   return ganttChart;
 }
 
 double RoundRobinScheduler::getAverageWaitingTime() const {
+  // avoid division by zero when no processes exist.
   if (processes.empty())
     return 0.0;
+
+  // aggregate waiting times then divide by number of processes.
   double totalWaitingTime = 0;
   int numOfProcesses = processes.size();
   for (auto p : processes) {
@@ -161,8 +197,11 @@ double RoundRobinScheduler::getAverageWaitingTime() const {
 }
 
 double RoundRobinScheduler::getAverageTurnaroundTime() const {
+  // avoid division by zero when no processes exist.
   if (processes.empty())
     return 0.0;
+
+  // aggregate turnaround times then divide by number of processes.
   double totalTurnaroundTime = 0;
   int numOfProcesses = processes.size();
   for (auto p : processes) {
