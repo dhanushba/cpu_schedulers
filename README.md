@@ -1,11 +1,42 @@
 # CPU Scheduler Simulator
 
-**Work in Progress** 
+This is a university project that simulates common CPU scheduling algorithms.
 
-This repository contains a C++ / Qt6 implementation of a live CPU Scheduling Simulator. 
+## What it does
 
-### Current Status
-Active Development. The core scheduling algorithms and real-time Gantt chart simulation are currently being implemented.
+- Lets you add processes (arrival time, burst time, priority)
+- Runs different scheduling algorithms
+- Shows process status in a table and execution order over time
+- Displays simple performance metrics (waiting and turnaround averages)
 
----
-*Note: Comprehensive documentation, build instructions, and team contributions will be added to this README once the final version is complete.*
+## Algorithms included
+
+- FCFS
+- SJF (preemptive and non-preemptive)
+- Priority (preemptive and non-preemptive)
+- Round Robin
+
+## Tech stack
+
+- C++17
+- Qt6 Widgets
+- CMake
+
+## Build and run (Linux/macOS)
+
+```bash
+cmake -S . -B build
+cmake --build build
+./build/CPUScheduler
+```
+
+## Build and run (Windows)
+
+Use CMake with a Qt6 kit installed, then run the generated `CPUScheduler.exe`.
+
+If you want a portable package, this repo includes a GitHub Actions workflow that builds and uploads a Windows release `.zip` on version tags like `v1.0.0`.
+
+## Notes
+
+- This project was built for learning purposes.
+- Focus was on scheduling logic and simulation behavior.
