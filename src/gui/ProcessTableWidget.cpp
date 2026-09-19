@@ -1,7 +1,9 @@
 #include "ProcessTableWidget.h"
 
 #include <QHeaderView>
+#include <QLabel>
 #include <QPushButton>
+#include <QStyle>
 #include <QTableWidget>
 #include <QVBoxLayout>
 
@@ -19,11 +21,20 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   table->verticalHeader()->setVisible(false);
 
   deleteSelectedButton = new QPushButton("Delete Selected", this);
+  deleteSelectedButton->setObjectName("dangerAction");
+  deleteSelectedButton->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+  deleteSelectedButton->setToolTip("Remove the selected process");
+  deleteSelectedButton->setEnabled(false);
+
+  emptyStateLabel = new QLabel("Add a process to build a workload", this);
+  emptyStateLabel->setObjectName("processEmptyState");
+  emptyStateLabel->setAlignment(Qt::AlignCenter);
 
   auto *layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
   layout->setSpacing(8);
   layout->addWidget(table);
+  layout->addWidget(emptyStateLabel);
   layout->addWidget(deleteSelectedButton);
 
   deleteSelectedButton->setMinimumHeight(34);
@@ -39,10 +50,19 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
     if (ok)
       emit deleteProcessRequested(pid);
   });
+
+  connect(table->selectionModel(), &QItemSelectionModel::selectionChanged, this,
+          [this]() {
+            deleteSelectedButton->setEnabled(
+                !table->selectionModel()->selectedRows().isEmpty());
+          });
 }
 
 void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
   table->setRowCount(static_cast<int>(processes.size()));
+  table->setVisible(!processes.empty());
+  emptyStateLabel->setVisible(processes.empty());
+  deleteSelectedButton->setEnabled(false);
   for (int i = 0; i < static_cast<int>(processes.size()); ++i) {
     const Process &p = processes[i];
     table->setItem(i, 0, new QTableWidgetItem(QString::number(p.pid)));

@@ -7,6 +7,7 @@
 
 class QTableWidget;
 class QPushButton;
+class QLabel;
 
 class ProcessTableWidget : public QWidget {
   Q_OBJECT
@@ -22,4 +23,5 @@ signals:
 private:
   QTableWidget *table;
   QPushButton *deleteSelectedButton;
+  QLabel *emptyStateLabel;
 };

@@ -20,6 +20,7 @@ public:
   int burst() const;
   int priority() const;
   int arrival() const;
+  QString selectedAlgorithmName() const;
 
   void setRuntimeState(bool hasScheduler, bool liveRunning, bool paused);
 
@@ -53,6 +54,7 @@ private:
   QLabel *burstLabel;
   QLabel *priorityLabel;
   QLabel *arrivalLabel;
+  QLabel *runtimeStatus;
 
   QPushButton *startLiveButton;
   QPushButton *stepButton;

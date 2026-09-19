@@ -10,6 +10,7 @@
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QSpinBox>
+#include <QStyle>
 #include <QVBoxLayout>
 
 ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
@@ -47,6 +48,30 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   clearAllButton = new QPushButton("Clear All Processes", this);
   addButton = new QPushButton("Add Process", this);
 
+        startLiveButton->setObjectName("primaryAction");
+        offlineButton->setObjectName("primaryAction");
+        addButton->setObjectName("primaryAction");
+        clearAllButton->setObjectName("dangerAction");
+        stopButton->setObjectName("dangerAction");
+
+        startLiveButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
+        pauseResumeButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
+        stepButton->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
+        offlineButton->setIcon(style()->standardIcon(QStyle::SP_MediaSeekForward));
+        stopButton->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
+        resetRunKeepButton->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
+        clearAllButton->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
+        addButton->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
+
+        startLiveButton->setToolTip("Run the simulation one time unit per second");
+        pauseResumeButton->setToolTip("Pause or resume live execution");
+        stepButton->setToolTip("Advance the simulation by one time unit");
+        offlineButton->setToolTip("Complete the current workload immediately");
+        stopButton->setToolTip("Stop live execution at the current time");
+        resetRunKeepButton->setToolTip("Reset results and keep the process list");
+        clearAllButton->setToolTip("Remove every process and reset the simulation");
+        addButton->setToolTip("Add the configured process to the workload");
+
   startLiveButton->setMinimumHeight(34);
   stepButton->setMinimumHeight(34);
   offlineButton->setMinimumHeight(34);
@@ -72,6 +97,9 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   configForm->addRow(algorithmLabel, algorithmCombo);
   configForm->addRow(preemptiveLabel, preemptiveCheck);
   configForm->addRow(quantumLabel, quantumSpin);
+        runtimeStatus = new QLabel("Ready", configBox);
+        runtimeStatus->setObjectName("runtimeStatus");
+        configForm->addRow("Status", runtimeStatus);
 
   auto *addBox = new QGroupBox("Process Input", this);
   auto *addForm = new QFormLayout(addBox);
@@ -83,15 +111,24 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   addForm->addRow(priorityLabel, prioritySpin);
   addForm->addRow(new QLabel("", addBox), addButton);
 
-  auto *runButtons = new QHBoxLayout();
-  runButtons->setSpacing(8);
-  runButtons->addWidget(startLiveButton);
-  runButtons->addWidget(pauseResumeButton);
-  runButtons->addWidget(stepButton);
-  runButtons->addWidget(offlineButton);
-  runButtons->addWidget(stopButton);
-  runButtons->addWidget(resetRunKeepButton);
-  runButtons->addWidget(clearAllButton);
+        auto *executionButtons = new QHBoxLayout();
+        executionButtons->setSpacing(8);
+        executionButtons->addWidget(startLiveButton);
+        executionButtons->addWidget(pauseResumeButton);
+        executionButtons->addWidget(stepButton);
+        executionButtons->addWidget(offlineButton);
+        executionButtons->addWidget(stopButton);
+
+        auto *dataButtons = new QHBoxLayout();
+        dataButtons->setSpacing(8);
+        dataButtons->addWidget(resetRunKeepButton);
+        dataButtons->addWidget(clearAllButton);
+
+        auto *runButtons = new QHBoxLayout();
+        runButtons->setSpacing(16);
+        runButtons->addLayout(executionButtons, 3);
+        runButtons->addStretch();
+        runButtons->addLayout(dataButtons, 2);
 
   auto *topRow = new QHBoxLayout();
   topRow->setSpacing(12);
@@ -161,6 +198,10 @@ int ControlPanelWidget::priority() const { return prioritySpin->value(); }
 
 int ControlPanelWidget::arrival() const { return arrivalSpin->value(); }
 
+QString ControlPanelWidget::selectedAlgorithmName() const {
+        return algorithmCombo->currentText();
+}
+
 void ControlPanelWidget::setRuntimeState(bool hasScheduler, bool liveRunning,
                                          bool paused) {
   const bool lockedConfig = hasScheduler;
@@ -174,10 +215,25 @@ void ControlPanelWidget::setRuntimeState(bool hasScheduler, bool liveRunning,
 
   pauseResumeButton->setEnabled(hasScheduler);
   pauseResumeButton->setText(paused ? "Resume" : "Pause");
+        pauseResumeButton->setIcon(style()->standardIcon(
+                        paused ? QStyle::SP_MediaPlay : QStyle::SP_MediaPause));
 
   stopButton->setEnabled(hasScheduler || liveRunning || paused);
   resetRunKeepButton->setEnabled(true);
   clearAllButton->setEnabled(true);
+
+        if (liveRunning)
+                runtimeStatus->setText("Running");
+        else if (paused)
+                runtimeStatus->setText("Paused");
+        else if (hasScheduler)
+                runtimeStatus->setText("Stopped");
+        else
+                runtimeStatus->setText("Ready");
+
+        runtimeStatus->setProperty("state", runtimeStatus->text().toLower());
+        runtimeStatus->style()->unpolish(runtimeStatus);
+        runtimeStatus->style()->polish(runtimeStatus);
 }
 
 void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
