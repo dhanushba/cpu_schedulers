@@ -5,6 +5,9 @@
 #include "RoundRobinScheduler.h"
 #include "SJFScheduler.h"
 
+#include <algorithm>
+#include <string>
+
 SimulationController::SimulationController(QObject *parent)
     : QObject(parent), selectedAlgorithm(Algorithm::FCFS), preemptiveMode(true),
       timeQuantum(2), now(0), nextPid(1), runningPid(-1), avgWaiting(0.0),
@@ -21,6 +24,10 @@ std::vector<Process> SimulationController::processes() const {
 
 std::vector<ExecutionRecord> SimulationController::ganttChart() const {
   return displayTimeline;
+}
+
+std::vector<SimulationSnapshot> SimulationController::snapshots() const {
+  return simulationSnapshots;
 }
 
 int SimulationController::currentTime() const { return now; }
@@ -80,9 +87,11 @@ void SimulationController::stepTick() {
   ensureSchedulerInitialized();
   if (!scheduler)
     return;
+  const auto processesBeforeTick = scheduler->getProcesses();
   scheduler->tick();
   now++;
   rebuildDisplayTimeline();
+  recordSnapshot(processesBeforeTick);
   refreshDerivedState();
   emit modeUpdated(false, false, true);
   emit stateUpdated();
@@ -96,11 +105,13 @@ void SimulationController::runOfflineInstant() {
     return;
 
   while (!scheduler->isFinished()) {
+    const auto processesBeforeTick = scheduler->getProcesses();
     scheduler->tick();
     now++;
+    rebuildDisplayTimeline();
+    recordSnapshot(processesBeforeTick);
   }
 
-  rebuildDisplayTimeline();
   refreshDerivedState();
   emit modeUpdated(false, false, true);
   emit stateUpdated();
@@ -120,6 +131,7 @@ void SimulationController::clearAllProcesses() {
   scheduler.reset();
   stagedProcesses.clear();
   displayTimeline.clear();
+  simulationSnapshots.clear();
   now = 0;
   nextPid = 1;
   runningPid = -1;
@@ -147,6 +159,7 @@ void SimulationController::resetRunKeepProcesses() {
   scheduler.reset();
   stagedProcesses = std::move(resetProcesses);
   displayTimeline.clear();
+  simulationSnapshots.clear();
   now = 0;
   runningPid = -1;
   avgWaiting = 0.0;
@@ -218,9 +231,11 @@ void SimulationController::onTick() {
     return;
 
   // Intentionally keep ticking forever to allow live additions while idle.
+  const auto processesBeforeTick = scheduler->getProcesses();
   scheduler->tick();
   now++;
   rebuildDisplayTimeline();
+  recordSnapshot(processesBeforeTick);
   refreshDerivedState();
   emit modeUpdated(true, false, true);
   emit stateUpdated();
@@ -281,6 +296,50 @@ void SimulationController::rebuildDisplayTimeline() {
       displayTimeline.emplace_back(-1, start, now);
     }
   }
+}
+
+void SimulationController::recordSnapshot(
+    const std::vector<Process> &processesBeforeTick) {
+  int executedPid = -1;
+  if (!displayTimeline.empty()) {
+    const auto &last = displayTimeline.back();
+    if (last.startTime < now && last.endTime >= now)
+      executedPid = last.pid;
+  }
+
+  std::vector<int> readyPids;
+  const int decisionTime = now - 1;
+  for (const auto &process : processesBeforeTick) {
+    if (!process.isFinished && process.remainingTime > 0 &&
+        process.arrivalTime <= decisionTime && process.pid != executedPid) {
+      readyPids.push_back(process.pid);
+    }
+  }
+  std::sort(readyPids.begin(), readyPids.end());
+
+  simulationSnapshots.push_back(
+      {decisionTime, executedPid, readyPids, decisionForPid(executedPid)});
+}
+
+std::string SimulationController::decisionForPid(int pid) const {
+  if (pid < 0)
+    return "CPU idle: no process was ready";
+
+  const std::string processName = "P" + std::to_string(pid) + " ran: ";
+  switch (selectedAlgorithm) {
+  case Algorithm::FCFS:
+    return processName + "earliest arrival time";
+  case Algorithm::SJF:
+    return processName + (preemptiveMode ? "shortest remaining time"
+                                         : "shortest ready job");
+  case Algorithm::Priority:
+    return processName + "highest priority among ready processes";
+  case Algorithm::RoundRobin:
+    return processName + "next in Round Robin rotation (quantum " +
+           std::to_string(timeQuantum) + ")";
+  }
+
+  return processName + "selected by scheduler";
 }
 
 void SimulationController::createScheduler() {
