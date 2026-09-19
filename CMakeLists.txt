@@ -51,6 +51,15 @@ if(BUILD_TESTING)
     add_executable(SchedulerTests tests/SchedulerTests.cpp)
     target_link_libraries(SchedulerTests PRIVATE SchedulerCore)
     add_test(NAME scheduler-regression-suite COMMAND SchedulerTests)
+
+    add_executable(SimulationControllerTests
+        tests/SimulationControllerTests.cpp
+        src/gui/SimulationController.cpp
+        include/gui/SimulationController.h
+    )
+    target_include_directories(SimulationControllerTests PRIVATE "include/gui")
+    target_link_libraries(SimulationControllerTests PRIVATE SchedulerCore Qt6::Core)
+    add_test(NAME simulation-controller-regression-suite COMMAND SimulationControllerTests)
 endif()
 
 install(TARGETS ${PROJECT_NAME}

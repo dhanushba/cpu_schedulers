@@ -251,7 +251,7 @@ void SimulationController::refreshDerivedState() {
   if (!scheduler)
     return;
 
-  if (!displayTimeline.empty()) {
+  if (!scheduler->isFinished() && !displayTimeline.empty()) {
     const auto &last = displayTimeline.back();
     if (last.endTime == now) {
       runningPid = last.pid;
