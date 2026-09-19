@@ -7,6 +7,7 @@
 
 class QTableWidget;
 class QLabel;
+class QPushButton;
 
 class ProcessTableWidget : public QWidget {
   Q_OBJECT
@@ -23,7 +24,14 @@ signals:
   void deleteProcessRequested(int pid);
 
 private:
+  int selectedRow() const;
+  void updateActionState();
+  void editSelectedProcess();
+
   QTableWidget *table;
   QLabel *emptyStateLabel;
+  QPushButton *editButton;
+  QPushButton *duplicateButton;
+  QPushButton *deleteButton;
   bool editingEnabled = true;
 };

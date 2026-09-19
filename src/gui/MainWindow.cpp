@@ -142,37 +142,21 @@ QPushButton#dangerAction:hover {
   background: #fff5f5;
   border-color: #d97a76;
 }
-QToolButton#processActionsButton {
-  border: 1px solid transparent;
-  border-radius: 4px;
-  background: transparent;
-  color: #6e6e73;
+QLabel#processTableTitle {
+  font-size: 15px;
   font-weight: 600;
 }
-QToolButton#processActionsButton:hover,
-QToolButton#processActionsButton:pressed {
-  background: #e8e8ed;
-  color: #1d1d1f;
+QPushButton#editProcessButton,
+QPushButton#duplicateProcessButton,
+QPushButton#deleteProcessButton {
+  padding: 5px 12px;
 }
-QToolButton#processActionsButton:focus {
-  border-color: #8e8e93;
-  background: #f2f2f4;
-  color: #1d1d1f;
+QPushButton#deleteProcessButton[destructive="true"] {
+  color: #c9342f;
 }
-QMenu {
-  background: #ffffff;
-  border: 1px solid #d7d7da;
-  padding: 4px;
-}
-QMenu::item {
-  border-radius: 4px;
-  padding: 6px 28px 6px 10px;
-}
-QMenu::item:selected {
-  background: #eeeeF0;
-}
-QMenu::item:disabled {
-  color: #a1a1a6;
+QPushButton#deleteProcessButton[destructive="true"]:hover {
+  background: #fff5f5;
+  border-color: #d97a76;
 }
 QLabel#runtimeStatus {
   font-weight: 600;

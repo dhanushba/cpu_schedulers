@@ -1,11 +1,11 @@
 #include "ControlPanelWidget.h"
 #include "ProcessTableWidget.h"
 
-#include <QAction>
 #include <QApplication>
 #include <QLabel>
+#include <QPushButton>
+#include <QSpinBox>
 #include <QTableWidget>
-#include <QToolButton>
 
 #include <iostream>
 
@@ -28,6 +28,12 @@ int main(int argc, char *argv[]) {
     std::cerr << "FAIL: paused state was not displayed\n";
     return 1;
   }
+  auto *priority = controls.findChild<QSpinBox *>("prioritySpin");
+  if (!priority || !priority->isVisibleTo(&controls) ||
+      !priority->toolTip().contains("Lower")) {
+    std::cerr << "FAIL: workload priority was not clearly available\n";
+    return 1;
+  }
 
   ProcessTableWidget processTable;
   auto *table = processTable.findChild<QTableWidget *>();
@@ -43,21 +49,22 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  auto *actionsButton =
-      processTable.findChild<QToolButton *>("processActionsButton");
-  auto *editAction = processTable.findChild<QAction *>("editProcessAction");
-  auto *duplicateAction =
-      processTable.findChild<QAction *>("duplicateProcessAction");
-  auto *deleteAction =
-      processTable.findChild<QAction *>("deleteProcessAction");
-  if (!actionsButton || !actionsButton->menu() || !editAction ||
-      !duplicateAction || !deleteAction) {
-    std::cerr << "FAIL: process row actions were not configured correctly\n";
+  auto *editButton =
+      processTable.findChild<QPushButton *>("editProcessButton");
+  auto *duplicateButton =
+      processTable.findChild<QPushButton *>("duplicateProcessButton");
+  auto *deleteButton =
+      processTable.findChild<QPushButton *>("deleteProcessButton");
+  if (!editButton || !duplicateButton || !deleteButton ||
+      editButton->isEnabled() || duplicateButton->isEnabled() ||
+      deleteButton->isEnabled()) {
+    std::cerr << "FAIL: process action toolbar was not configured correctly\n";
     return 1;
   }
-  if (!actionsButton->isVisibleTo(&processTable) ||
-      actionsButton->accessibleName() != "Actions for process 1") {
-    std::cerr << "FAIL: process actions were not visible and accessible\n";
+  table->selectRow(0);
+  if (!editButton->isEnabled() || !duplicateButton->isEnabled() ||
+      !deleteButton->isEnabled()) {
+    std::cerr << "FAIL: selecting a process did not enable its actions\n";
     return 1;
   }
 
@@ -69,15 +76,16 @@ int main(int argc, char *argv[]) {
                    });
   QObject::connect(&processTable, &ProcessTableWidget::deleteProcessRequested,
                    [&deletedPid](int pid) { deletedPid = pid; });
-  duplicateAction->trigger();
-  deleteAction->trigger();
+  duplicateButton->click();
+  deleteButton->click();
   if (duplicatedBurst != 3 || deletedPid != 1) {
     std::cerr << "FAIL: process row actions emitted incorrect values\n";
     return 1;
   }
 
   processTable.setEditingEnabled(false);
-  if (editAction->isEnabled()) {
+  if (editButton->isEnabled() || !duplicateButton->isEnabled() ||
+      !deleteButton->isEnabled()) {
     std::cerr << "FAIL: editing remained enabled after simulation start\n";
     return 1;
   }
