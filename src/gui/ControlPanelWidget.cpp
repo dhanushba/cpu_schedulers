@@ -10,7 +10,6 @@
 #include <QPushButton>
 #include <QSizePolicy>
 #include <QSpinBox>
-#include <QStyle>
 #include <QVBoxLayout>
 
 ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
@@ -39,29 +38,19 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   arrivalSpin->setRange(0, 9999);
   arrivalSpin->setValue(0);
 
-  startLiveButton = new QPushButton("Start Live", this);
-  stepButton = new QPushButton("Step / Next Tick", this);
-  offlineButton = new QPushButton("Run Offline (Instant)", this);
+        startLiveButton = new QPushButton("Start", this);
+        stepButton = new QPushButton("Step", this);
+        offlineButton = new QPushButton("Run to End", this);
   pauseResumeButton = new QPushButton("Pause", this);
   stopButton = new QPushButton("Stop", this);
-  resetRunKeepButton = new QPushButton("Reset Run (Keep Processes)", this);
-  clearAllButton = new QPushButton("Clear All Processes", this);
+        resetRunKeepButton = new QPushButton("Reset", this);
+        clearAllButton = new QPushButton("Clear Processes", this);
   addButton = new QPushButton("Add Process", this);
 
         startLiveButton->setObjectName("primaryAction");
-        offlineButton->setObjectName("primaryAction");
         addButton->setObjectName("primaryAction");
         clearAllButton->setObjectName("dangerAction");
         stopButton->setObjectName("dangerAction");
-
-        startLiveButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
-        pauseResumeButton->setIcon(style()->standardIcon(QStyle::SP_MediaPause));
-        stepButton->setIcon(style()->standardIcon(QStyle::SP_MediaSkipForward));
-        offlineButton->setIcon(style()->standardIcon(QStyle::SP_MediaSeekForward));
-        stopButton->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
-        resetRunKeepButton->setIcon(style()->standardIcon(QStyle::SP_BrowserReload));
-        clearAllButton->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
-        addButton->setIcon(style()->standardIcon(QStyle::SP_DialogApplyButton));
 
         startLiveButton->setToolTip("Run the simulation one time unit per second");
         pauseResumeButton->setToolTip("Pause or resume live execution");
@@ -215,8 +204,6 @@ void ControlPanelWidget::setRuntimeState(bool hasScheduler, bool liveRunning,
 
   pauseResumeButton->setEnabled(hasScheduler);
   pauseResumeButton->setText(paused ? "Resume" : "Pause");
-        pauseResumeButton->setIcon(style()->standardIcon(
-                        paused ? QStyle::SP_MediaPlay : QStyle::SP_MediaPause));
 
   stopButton->setEnabled(hasScheduler || liveRunning || paused);
   resetRunKeepButton->setEnabled(true);

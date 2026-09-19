@@ -1,30 +1,34 @@
 #include "ProcessTableWidget.h"
 
+#include <QAction>
+#include <QDialog>
+#include <QDialogButtonBox>
+#include <QEvent>
+#include <QFormLayout>
 #include <QHeaderView>
 #include <QLabel>
-#include <QPushButton>
-#include <QStyle>
+#include <QMenu>
+#include <QSpinBox>
 #include <QTableWidget>
+#include <QToolButton>
 #include <QVBoxLayout>
 
 ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   table = new QTableWidget(this);
-  table->setColumnCount(8);
+  table->setColumnCount(9);
   table->setHorizontalHeaderLabels({"PID", "Arrival", "Burst", "Priority",
                                     "Remaining", "Waiting", "Turnaround",
-                                    "Status"});
+                                    "Status", "Actions"});
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
+  table->horizontalHeader()->setSectionResizeMode(8,
+                                                   QHeaderView::ResizeToContents);
   table->setSelectionBehavior(QAbstractItemView::SelectRows);
   table->setSelectionMode(QAbstractItemView::SingleSelection);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->setAlternatingRowColors(true);
+  table->setMouseTracking(true);
+  table->installEventFilter(this);
   table->verticalHeader()->setVisible(false);
-
-  deleteSelectedButton = new QPushButton("Delete Selected", this);
-  deleteSelectedButton->setObjectName("dangerAction");
-  deleteSelectedButton->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
-  deleteSelectedButton->setToolTip("Remove the selected process");
-  deleteSelectedButton->setEnabled(false);
 
   emptyStateLabel = new QLabel("Add a process to build a workload", this);
   emptyStateLabel->setObjectName("processEmptyState");
@@ -35,34 +39,17 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   layout->setSpacing(8);
   layout->addWidget(table);
   layout->addWidget(emptyStateLabel);
-  layout->addWidget(deleteSelectedButton);
 
-  deleteSelectedButton->setMinimumHeight(34);
-
-  connect(deleteSelectedButton, &QPushButton::clicked, this, [this]() {
-    const auto selected = table->selectionModel()->selectedRows();
-    if (selected.isEmpty())
-      return;
-
-    const int row = selected.first().row();
-    bool ok = false;
-    const int pid = table->item(row, 0)->text().toInt(&ok);
-    if (ok)
-      emit deleteProcessRequested(pid);
-  });
-
-  connect(table->selectionModel(), &QItemSelectionModel::selectionChanged, this,
-          [this]() {
-            deleteSelectedButton->setEnabled(
-                !table->selectionModel()->selectedRows().isEmpty());
-          });
+  connect(table, &QTableWidget::cellEntered, this,
+          [this](int row, int) { showActionsForRow(row); });
+    connect(table, &QTableWidget::currentCellChanged, this,
+      [this](int row, int, int, int) { showActionsForRow(row); });
 }
 
 void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
   table->setRowCount(static_cast<int>(processes.size()));
   table->setVisible(!processes.empty());
   emptyStateLabel->setVisible(processes.empty());
-  deleteSelectedButton->setEnabled(false);
   for (int i = 0; i < static_cast<int>(processes.size()); ++i) {
     const Process &p = processes[i];
     table->setItem(i, 0, new QTableWidgetItem(QString::number(p.pid)));
@@ -76,5 +63,89 @@ void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
                    new QTableWidgetItem(QString::number(p.turnaroundTime)));
     table->setItem(i, 7,
                    new QTableWidgetItem(p.isFinished ? "Finished" : "Active"));
+
+    auto *actionsButton = new QToolButton(table);
+    actionsButton->setObjectName("processActionsButton");
+    actionsButton->setText("...");
+    actionsButton->setToolTip(QString("Actions for P%1").arg(p.pid));
+    actionsButton->setPopupMode(QToolButton::InstantPopup);
+    actionsButton->setAutoRaise(true);
+    actionsButton->setFixedSize(32, 28);
+    actionsButton->setVisible(false);
+
+    auto *menu = new QMenu(actionsButton);
+    auto *editAction = menu->addAction("Edit");
+    editAction->setObjectName("editProcessAction");
+    editAction->setEnabled(editingEnabled);
+    editAction->setToolTip(editingEnabled
+                               ? "Change this process before simulation starts"
+                               : "Reset the simulation before editing");
+    auto *duplicateAction = menu->addAction("Duplicate");
+    duplicateAction->setObjectName("duplicateProcessAction");
+    menu->addSeparator();
+    auto *deleteAction = menu->addAction("Delete");
+    deleteAction->setObjectName("deleteProcessAction");
+
+    connect(editAction, &QAction::triggered, this, [this, p]() {
+      QDialog dialog(this);
+      dialog.setWindowTitle(QString("Edit P%1").arg(p.pid));
+      auto *form = new QFormLayout(&dialog);
+
+      auto *arrival = new QSpinBox(&dialog);
+      arrival->setRange(0, 9999);
+      arrival->setValue(p.arrivalTime);
+      auto *burst = new QSpinBox(&dialog);
+      burst->setRange(1, 999);
+      burst->setValue(p.burstTime);
+      auto *priority = new QSpinBox(&dialog);
+      priority->setRange(0, 50);
+      priority->setValue(p.priority);
+
+      form->addRow("Arrival", arrival);
+      form->addRow("Burst", burst);
+      form->addRow("Priority", priority);
+      auto *buttons = new QDialogButtonBox(QDialogButtonBox::Save |
+                                               QDialogButtonBox::Cancel,
+                                           &dialog);
+      form->addRow(buttons);
+      connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+      connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+
+      if (dialog.exec() == QDialog::Accepted)
+        emit editProcessRequested(p.pid, burst->value(), priority->value(),
+                                  arrival->value());
+    });
+    connect(duplicateAction, &QAction::triggered, this, [this, p]() {
+      emit duplicateProcessRequested(p.burstTime, p.priority, p.arrivalTime);
+    });
+    connect(deleteAction, &QAction::triggered, this,
+            [this, p]() { emit deleteProcessRequested(p.pid); });
+
+    actionsButton->setMenu(menu);
+    table->setCellWidget(i, 8, actionsButton);
+  }
+}
+
+void ProcessTableWidget::setEditingEnabled(bool enabled) {
+  editingEnabled = enabled;
+  const auto editActions = findChildren<QAction *>("editProcessAction");
+  for (auto *action : editActions) {
+    action->setEnabled(enabled);
+    action->setToolTip(enabled ? "Change this process before simulation starts"
+                               : "Reset the simulation before editing");
+  }
+}
+
+bool ProcessTableWidget::eventFilter(QObject *watched, QEvent *event) {
+  if (watched == table && event->type() == QEvent::Leave)
+    showActionsForRow(-1);
+  return QWidget::eventFilter(watched, event);
+}
+
+void ProcessTableWidget::showActionsForRow(int row) {
+  for (int index = 0; index < table->rowCount(); ++index) {
+    auto *button = qobject_cast<QToolButton *>(table->cellWidget(index, 8));
+    if (button)
+      button->setVisible(index == row);
   }
 }

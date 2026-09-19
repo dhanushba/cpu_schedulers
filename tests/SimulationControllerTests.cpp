@@ -1,5 +1,6 @@
 #include "SimulationController.h"
 
+#include <cmath>
 #include <iostream>
 #include <string>
 
@@ -12,6 +13,11 @@ void expect(bool condition, const std::string &description) {
     return;
   std::cerr << "FAIL: " << description << '\n';
   failures++;
+}
+
+void expectNear(double actual, double expected,
+                const std::string &description) {
+  expect(std::abs(actual - expected) < 0.0001, description);
 }
 
 void testCompletedSimulationReportsIdle() {
@@ -28,6 +34,50 @@ void testCompletedSimulationReportsIdle() {
              timeline.front().startTime == 0 && timeline.front().endTime == 5,
          "final Gantt interval is preserved");
 }
+
+      void testDisplayedWorkloadMetrics() {
+        SimulationController controller;
+        controller.addProcessRequest(3, 1, 0);
+        controller.addProcessRequest(5, 1, 0);
+
+        expect(controller.currentTime() == 0, "staged workload starts at time zero");
+        expect(controller.currentRunningPid() == -1,
+          "CPU is idle before execution starts");
+        expectNear(controller.averageWaitingTime(), 0.0,
+              "initial average waiting time is zero");
+        expectNear(controller.averageTurnaroundTime(), 0.0,
+              "initial average turnaround time is zero");
+
+        controller.runOfflineInstant();
+
+        expect(controller.currentTime() == 8, "displayed workload completes at time 8");
+        expect(controller.currentRunningPid() == -1,
+          "CPU is idle after displayed workload completes");
+        expectNear(controller.averageWaitingTime(), 1.5,
+              "displayed FCFS average waiting time");
+        expectNear(controller.averageTurnaroundTime(), 5.5,
+              "displayed FCFS average turnaround time");
+      }
+
+            void testEditsOnlyStagedProcesses() {
+              SimulationController controller;
+              controller.addProcessRequest(3, 1, 0);
+              controller.editProcessRequest(1, 7, 4, 2);
+
+              auto processes = controller.processes();
+              expect(processes.size() == 1 && processes[0].pid == 1,
+                "editing preserves the process PID");
+              expect(processes[0].burstTime == 7 && processes[0].priority == 4 &&
+                    processes[0].arrivalTime == 2,
+                "editing updates staged process fields");
+
+              controller.stepTick();
+              controller.editProcessRequest(1, 9, 6, 0);
+              processes = controller.processes();
+              expect(processes[0].burstTime == 7 && processes[0].priority == 4 &&
+                    processes[0].arrivalTime == 2,
+                "editing is rejected after execution initializes");
+            }
 
 void testSnapshotsCaptureDecisionsAndReadyProcesses() {
   SimulationController controller;
@@ -57,6 +107,8 @@ void testSnapshotsCaptureDecisionsAndReadyProcesses() {
 
 int main() {
   testCompletedSimulationReportsIdle();
+  testDisplayedWorkloadMetrics();
+  testEditsOnlyStagedProcesses();
   testSnapshotsCaptureDecisionsAndReadyProcesses();
 
   if (failures == 0)

@@ -10,8 +10,8 @@
 #include "SimulationController.h"
 
 #include <QHBoxLayout>
-#include <QSizePolicy>
 #include <QMessageBox>
+#include <QSizePolicy>
 #include <QSplitter>
 #include <QStatusBar>
 #include <QTabWidget>
@@ -68,147 +68,174 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 void MainWindow::applyStyles() {
   setStyleSheet(R"(
 QMainWindow {
-  background: #eef3f8;
+  background: #f5f5f7;
 }
 QWidget {
   font-family: "Segoe UI", "Noto Sans", sans-serif;
   font-size: 13px;
-  color: #111827;
+  color: #1d1d1f;
 }
 QGroupBox {
-  border: 1px solid #c9d5e2;
-  border-radius: 10px;
+  border: 1px solid #d7d7da;
+  border-radius: 6px;
   margin-top: 12px;
   padding: 12px;
-  background: #f8fbff;
+  background: #ffffff;
 }
 QGroupBox::title {
   subcontrol-origin: margin;
   left: 12px;
   padding: 0 6px;
-  color: #334155;
+  color: #3a3a3c;
   font-weight: 600;
 }
 QLabel {
-  color: #1f2937;
+  color: #1d1d1f;
 }
 QComboBox, QSpinBox {
   background: #ffffff;
-  border: 1px solid #c3ceda;
-  border-radius: 8px;
+  border: 1px solid #c7c7cc;
+  border-radius: 6px;
   padding: 5px 8px;
   min-height: 22px;
 }
 QComboBox:hover, QSpinBox:hover {
-  border-color: #95a8bb;
+  border-color: #8e8e93;
 }
 QComboBox:focus, QSpinBox:focus {
-  border: 1px solid #3b82f6;
+  border: 1px solid #6e6e73;
 }
 QPushButton {
-  border: 1px solid #b7c7d8;
-  border-radius: 8px;
-  padding: 8px 14px;
-  background: #e8f0fa;
-  color: #1e293b;
-  font-weight: 600;
+  border: 1px solid #c7c7cc;
+  border-radius: 6px;
+  padding: 7px 14px;
+  background: #ffffff;
+  color: #1d1d1f;
 }
 QPushButton:hover {
-  background: #d6e5f7;
-  border-color: #8aa3bc;
+  background: #f2f2f4;
+  border-color: #a1a1a6;
 }
 QPushButton:pressed {
-  background: #c9dcf3;
+  background: #e5e5e7;
 }
 QPushButton:disabled {
-  background: #e6ebf0;
-  border-color: #d3dbe4;
-  color: #8b97a5;
+  background: #f2f2f4;
+  border-color: #e0e0e3;
+  color: #a1a1a6;
 }
-QPushButton#primaryAction {
-  background: #2563eb;
-  border-color: #1d4ed8;
+QPushButton#primaryAction, QPushButton#compareAllButton {
+  background: #1d1d1f;
+  border-color: #1d1d1f;
   color: #ffffff;
+  font-weight: 600;
 }
-QPushButton#primaryAction:hover {
-  background: #1d4ed8;
+QPushButton#primaryAction:hover, QPushButton#compareAllButton:hover {
+  background: #3a3a3c;
 }
 QPushButton#dangerAction {
-  background: #fff1f2;
-  border-color: #fecdd3;
-  color: #be123c;
+  background: #ffffff;
+  border-color: #c7c7cc;
+  color: #c9342f;
 }
 QPushButton#dangerAction:hover {
-  background: #ffe4e6;
-  border-color: #fda4af;
+  background: #fff5f5;
+  border-color: #d97a76;
+}
+QToolButton#processActionsButton {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #3a3a3c;
+  font-weight: 600;
+}
+QToolButton#processActionsButton:hover,
+QToolButton#processActionsButton:pressed {
+  background: #e8e8ed;
+}
+QMenu {
+  background: #ffffff;
+  border: 1px solid #d7d7da;
+  padding: 4px;
+}
+QMenu::item {
+  border-radius: 4px;
+  padding: 6px 28px 6px 10px;
+}
+QMenu::item:selected {
+  background: #eeeeF0;
+}
+QMenu::item:disabled {
+  color: #a1a1a6;
 }
 QLabel#runtimeStatus {
-  border-radius: 8px;
-  padding: 4px 8px;
   font-weight: 600;
-  background: #e2e8f0;
-  color: #334155;
+  color: #6e6e73;
 }
 QLabel#runtimeStatus[state="running"] {
-  background: #d1fae5;
-  color: #047857;
+  color: #248a3d;
 }
 QLabel#runtimeStatus[state="paused"] {
-  background: #fef3c7;
-  color: #92400e;
+  color: #9a6700;
 }
 QLabel#processEmptyState {
-  color: #64748b;
+  color: #6e6e73;
   padding: 28px;
 }
 QSplitter::handle {
-  background: #dbe4ee;
-  width: 5px;
+  background: #e5e5e7;
+  width: 1px;
 }
 QTableWidget {
   background: #ffffff;
-  border: 1px solid #c9d5e2;
-  border-radius: 8px;
-  gridline-color: #e5e7eb;
-  selection-background-color: #dbeafe;
-  selection-color: #0f172a;
+  alternate-background-color: #fafafa;
+  border: 1px solid #d7d7da;
+  border-radius: 6px;
+  gridline-color: #ececef;
+  selection-background-color: #e8e8ed;
+  selection-color: #1d1d1f;
 }
 QHeaderView::section {
-  background: #dde8f4;
-  color: #111827;
+  background: #f5f5f7;
+  color: #3a3a3c;
   padding: 7px;
   border: 0;
-  border-right: 1px solid #c3ceda;
-  border-bottom: 1px solid #c3ceda;
+  border-right: 1px solid #e0e0e3;
+  border-bottom: 1px solid #d7d7da;
   font-weight: 600;
 }
 QTabWidget::pane {
   border: 0;
 }
 QTabBar::tab {
-  background: #dde8f4;
-  border: 1px solid #c3ceda;
-  padding: 9px 18px;
-  margin-right: 4px;
+  background: transparent;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: #6e6e73;
+  padding: 10px 16px;
 }
 QTabBar::tab:selected {
-  background: #ffffff;
-  border-bottom-color: #ffffff;
+  border-bottom-color: #1d1d1f;
+  color: #1d1d1f;
+  font-weight: 600;
+}
+QTabBar::tab:hover:!selected {
+  color: #1d1d1f;
 }
 QLabel#comparisonTitle, QLabel#traceTitle {
   font-size: 18px;
   font-weight: 600;
-  color: #0f172a;
+  color: #1d1d1f;
 }
 QLabel#comparisonStatus, QLabel#traceStatus {
-  color: #64748b;
+  color: #6e6e73;
 }
 GanttChartWidget {
-  border: 1px solid #c9d5e2;
-  border-radius: 10px;
-  background: #f8fbff;
+  border: 1px solid #d7d7da;
+  border-radius: 6px;
+  background: #ffffff;
 }
-")");
+)");
 }
 
 void MainWindow::wireSignals() {
@@ -239,6 +266,10 @@ void MainWindow::wireSignals() {
 
   connect(processTable, &ProcessTableWidget::deleteProcessRequested, controller,
           &SimulationController::deleteProcessRequest);
+    connect(processTable, &ProcessTableWidget::editProcessRequested, controller,
+      &SimulationController::editProcessRequest);
+    connect(processTable, &ProcessTableWidget::duplicateProcessRequested,
+      controller, &SimulationController::addProcessRequest);
 
   connect(comparison, &ComparisonWidget::compareRequested, this, [this]() {
     const auto workload = controller->processes();
@@ -261,6 +292,7 @@ void MainWindow::wireSignals() {
 }
 
 void MainWindow::refreshViews() {
+  processTable->setEditingEnabled(!controller->hasScheduler());
   processTable->setProcesses(controller->processes());
   ganttChart->setTimeline(controller->ganttChart(), controller->currentTime());
   decisionTrace->setSnapshots(controller->snapshots());
