@@ -8,6 +8,7 @@
 #include "ExecutionRecord.h"
 #include "IScheduler.h"
 #include "Process.h"
+#include "SimulationSnapshot.h"
 
 class SimulationController : public QObject {
   Q_OBJECT
@@ -24,6 +25,7 @@ public:
 
   std::vector<Process> processes() const;
   std::vector<ExecutionRecord> ganttChart() const;
+  std::vector<SimulationSnapshot> snapshots() const;
   int currentTime() const;
   int currentRunningPid() const;
   double averageWaitingTime() const;
@@ -59,12 +61,15 @@ private:
   void ensureSchedulerInitialized();
   void refreshDerivedState();
   void rebuildDisplayTimeline();
+  void recordSnapshot(const std::vector<Process> &processesBeforeTick);
+  std::string decisionForPid(int pid) const;
   void createScheduler();
 
   QTimer timer;
   std::unique_ptr<IScheduler> scheduler;
   std::vector<Process> stagedProcesses;
   std::vector<ExecutionRecord> displayTimeline;
+  std::vector<SimulationSnapshot> simulationSnapshots;
 
   Algorithm selectedAlgorithm;
   bool preemptiveMode;
