@@ -3,7 +3,6 @@
 #include <QAction>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QEvent>
 #include <QFormLayout>
 #include <QHeaderView>
 #include <QLabel>
@@ -26,8 +25,6 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   table->setSelectionMode(QAbstractItemView::SingleSelection);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->setAlternatingRowColors(true);
-  table->setMouseTracking(true);
-  table->installEventFilter(this);
   table->verticalHeader()->setVisible(false);
 
   emptyStateLabel = new QLabel("Add a process to build a workload", this);
@@ -39,11 +36,6 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   layout->setSpacing(8);
   layout->addWidget(table);
   layout->addWidget(emptyStateLabel);
-
-  connect(table, &QTableWidget::cellEntered, this,
-          [this](int row, int) { showActionsForRow(row); });
-    connect(table, &QTableWidget::currentCellChanged, this,
-      [this](int row, int, int, int) { showActionsForRow(row); });
 }
 
 void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
@@ -68,10 +60,10 @@ void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
     actionsButton->setObjectName("processActionsButton");
     actionsButton->setText("...");
     actionsButton->setToolTip(QString("Actions for P%1").arg(p.pid));
+    actionsButton->setAccessibleName(QString("Actions for process %1").arg(p.pid));
     actionsButton->setPopupMode(QToolButton::InstantPopup);
     actionsButton->setAutoRaise(true);
-    actionsButton->setFixedSize(32, 28);
-    actionsButton->setVisible(false);
+    actionsButton->setFixedSize(36, 28);
 
     auto *menu = new QMenu(actionsButton);
     auto *editAction = menu->addAction("Edit");
@@ -133,19 +125,5 @@ void ProcessTableWidget::setEditingEnabled(bool enabled) {
     action->setEnabled(enabled);
     action->setToolTip(enabled ? "Change this process before simulation starts"
                                : "Reset the simulation before editing");
-  }
-}
-
-bool ProcessTableWidget::eventFilter(QObject *watched, QEvent *event) {
-  if (watched == table && event->type() == QEvent::Leave)
-    showActionsForRow(-1);
-  return QWidget::eventFilter(watched, event);
-}
-
-void ProcessTableWidget::showActionsForRow(int row) {
-  for (int index = 0; index < table->rowCount(); ++index) {
-    auto *button = qobject_cast<QToolButton *>(table->cellWidget(index, 8));
-    if (button)
-      button->setVisible(index == row);
   }
 }

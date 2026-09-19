@@ -55,9 +55,9 @@ int main(int argc, char *argv[]) {
     std::cerr << "FAIL: process row actions were not configured correctly\n";
     return 1;
   }
-  table->setCurrentCell(0, 0);
-  if (actionsButton->isHidden()) {
-    std::cerr << "FAIL: selecting a process did not reveal its actions\n";
+  if (!actionsButton->isVisibleTo(&processTable) ||
+      actionsButton->accessibleName() != "Actions for process 1") {
+    std::cerr << "FAIL: process actions were not visible and accessible\n";
     return 1;
   }
 
