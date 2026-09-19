@@ -7,6 +7,8 @@ class ProcessTableWidget;
 class GanttChartWidget;
 class MetricsWidget;
 class SimulationController;
+class ComparisonWidget;
+class QTabWidget;
 
 class MainWindow : public QMainWindow {
   Q_OBJECT
@@ -24,4 +26,6 @@ private:
   GanttChartWidget *ganttChart;
   MetricsWidget *metrics;
   SimulationController *controller;
+  ComparisonWidget *comparison;
+  QTabWidget *tabs;
 };

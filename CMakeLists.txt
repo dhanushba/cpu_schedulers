@@ -64,6 +64,18 @@ if(BUILD_TESTING)
     add_executable(ComparisonRunnerTests tests/ComparisonRunnerTests.cpp)
     target_link_libraries(ComparisonRunnerTests PRIVATE SchedulerCore)
     add_test(NAME comparison-runner-regression-suite COMMAND ComparisonRunnerTests)
+
+    add_executable(ComparisonWidgetTests
+        tests/ComparisonWidgetTests.cpp
+        src/gui/ComparisonWidget.cpp
+        include/gui/ComparisonWidget.h
+    )
+    target_include_directories(ComparisonWidgetTests PRIVATE "include/gui")
+    target_link_libraries(ComparisonWidgetTests PRIVATE SchedulerCore Qt6::Widgets)
+    add_test(NAME comparison-widget-regression-suite COMMAND ComparisonWidgetTests)
+    set_tests_properties(comparison-widget-regression-suite PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 endif()
 
 install(TARGETS ${PROJECT_NAME}
