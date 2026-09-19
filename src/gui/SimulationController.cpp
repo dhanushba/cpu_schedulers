@@ -207,6 +207,21 @@ void SimulationController::addProcessRequest(int burst, int priority, int arriva
   emit stateUpdated();
 }
 
+void SimulationController::editProcessRequest(int pid, int burst, int priority,
+                                              int arrival) {
+  if (scheduler || burst <= 0 || arrival < 0)
+    return;
+
+  for (auto &process : stagedProcesses) {
+    if (process.pid != pid)
+      continue;
+    process = Process(pid, arrival, burst, priority);
+    refreshDerivedState();
+    emit stateUpdated();
+    return;
+  }
+}
+
 void SimulationController::deleteProcessRequest(int pid) {
   if (!scheduler) {
     for (auto it = stagedProcesses.begin(); it != stagedProcesses.end(); ++it) {

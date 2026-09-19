@@ -73,6 +73,32 @@ void testUtilizationIncludesInitialIdleTime() {
                "utilization includes time before first arrival");
 }
 
+void testDisplayedTwoProcessComparison() {
+  const auto results =
+      ComparisonRunner::run({Process(1, 0, 3, 1), Process(2, 0, 5, 1)}, 1);
+
+  for (const auto &result : results) {
+    expectNear(result.cpuUtilization, 100.0,
+               "displayed workload has full CPU utilization");
+    if (result.mode == SchedulerMode::RoundRobin)
+      continue;
+    expectNear(result.averageWaitingTime, 1.5,
+               "non-RR displayed average waiting time");
+    expectNear(result.averageTurnaroundTime, 5.5,
+               "non-RR displayed average turnaround time");
+    expect(result.contextSwitches == 1,
+           "non-RR displayed context switch count");
+  }
+
+  const auto &roundRobin = findResult(results, SchedulerMode::RoundRobin);
+  expectNear(roundRobin.averageWaitingTime, 2.5,
+             "displayed Round Robin average waiting time");
+  expectNear(roundRobin.averageTurnaroundTime, 6.5,
+             "displayed Round Robin average turnaround time");
+  expect(roundRobin.contextSwitches == 5,
+         "displayed Round Robin context switch count");
+}
+
 void testRejectsInvalidQuantum() {
   bool threw = false;
   try {
@@ -88,6 +114,7 @@ void testRejectsInvalidQuantum() {
 int main() {
   testRunsAllModesWithoutMutatingWorkload();
   testUtilizationIncludesInitialIdleTime();
+  testDisplayedTwoProcessComparison();
   testRejectsInvalidQuantum();
 
   if (failures != 0) {

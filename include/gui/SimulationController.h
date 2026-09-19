@@ -48,6 +48,7 @@ public slots:
   void resetRunKeepProcesses();
   void clearAllProcesses();
   void addProcessRequest(int burst, int priority, int arrival);
+  void editProcessRequest(int pid, int burst, int priority, int arrival);
   void deleteProcessRequest(int pid);
 
 signals:
