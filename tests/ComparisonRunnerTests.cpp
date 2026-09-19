@@ -99,6 +99,24 @@ void testDisplayedTwoProcessComparison() {
          "displayed Round Robin context switch count");
 }
 
+    void testPriorityValuesAffectComparison() {
+      const auto results = ComparisonRunner::run(
+        {Process(1, 0, 5, 5), Process(2, 1, 2, 1)}, 2);
+
+      const auto &nonPreemptive =
+        findResult(results, SchedulerMode::PriorityNonPreemptive);
+      const auto &preemptive =
+        findResult(results, SchedulerMode::PriorityPreemptive);
+
+      expectNear(nonPreemptive.averageWaitingTime, 2.0,
+           "non-preemptive priority keeps the running process");
+      expectNear(preemptive.averageWaitingTime, 1.0,
+           "lower priority value preempts the running process");
+      expect(preemptive.timeline.size() == 3 &&
+           preemptive.timeline[1].pid == 2,
+         "priority comparison schedules the lower value first");
+    }
+
 void testRejectsInvalidQuantum() {
   bool threw = false;
   try {
@@ -115,6 +133,7 @@ int main() {
   testRunsAllModesWithoutMutatingWorkload();
   testUtilizationIncludesInitialIdleTime();
   testDisplayedTwoProcessComparison();
+  testPriorityValuesAffectComparison();
   testRejectsInvalidQuantum();
 
   if (failures != 0) {

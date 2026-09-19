@@ -30,9 +30,11 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   burstSpin->setRange(1, 999);
   burstSpin->setValue(5);
 
-  prioritySpin = new QSpinBox(this);
+        prioritySpin = new QSpinBox(this);
+        prioritySpin->setObjectName("prioritySpin");
   prioritySpin->setRange(0, 50);
   prioritySpin->setValue(1);
+        prioritySpin->setToolTip("Lower values have higher scheduling priority");
 
   arrivalSpin = new QSpinBox(this);
   arrivalSpin->setRange(0, 9999);
@@ -94,7 +96,7 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   auto *addForm = new QFormLayout(addBox);
   arrivalLabel = new QLabel("Arrival", addBox);
   burstLabel = new QLabel("Burst", addBox);
-  priorityLabel = new QLabel("Priority", addBox);
+        priorityLabel = new QLabel("Priority (lower first)", addBox);
   addForm->addRow(arrivalLabel, arrivalSpin);
   addForm->addRow(burstLabel, burstSpin);
   addForm->addRow(priorityLabel, prioritySpin);
@@ -227,7 +229,6 @@ void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
   const int algorithm = selectedAlgorithmIndex();
   const bool usesPreemptionToggle = (algorithm == 1 || algorithm == 2);
   const bool usesQuantum = (algorithm == 3);
-  const bool usesPriority = (algorithm == 2);
 
   preemptiveLabel->setVisible(usesPreemptionToggle);
   preemptiveCheck->setVisible(usesPreemptionToggle);
@@ -237,7 +238,7 @@ void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
   quantumSpin->setVisible(usesQuantum);
   quantumSpin->setEnabled(usesQuantum && !configLocked);
 
-  priorityLabel->setVisible(usesPriority);
-  prioritySpin->setVisible(usesPriority);
-  prioritySpin->setEnabled(usesPriority);
+        priorityLabel->setVisible(true);
+        prioritySpin->setVisible(true);
+        prioritySpin->setEnabled(true);
 }

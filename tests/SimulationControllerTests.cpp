@@ -79,6 +79,23 @@ void testCompletedSimulationReportsIdle() {
                 "editing is rejected after execution initializes");
             }
 
+        void testDeletesMultipleProcessesTogether() {
+          SimulationController controller;
+          controller.addProcessRequest(3, 1, 0);
+          controller.addProcessRequest(4, 2, 1);
+          controller.addProcessRequest(5, 3, 2);
+
+          int updates = 0;
+          QObject::connect(&controller, &SimulationController::stateUpdated,
+                           [&updates]() { updates++; });
+          controller.deleteProcessesRequest({1, 3});
+
+          const auto processes = controller.processes();
+          expect(processes.size() == 1 && processes[0].pid == 2,
+                 "bulk delete removes every requested process");
+          expect(updates == 1, "bulk delete refreshes the UI once");
+        }
+
 void testSnapshotsCaptureDecisionsAndReadyProcesses() {
   SimulationController controller;
   controller.setAlgorithm(1);
@@ -109,6 +126,7 @@ int main() {
   testCompletedSimulationReportsIdle();
   testDisplayedWorkloadMetrics();
   testEditsOnlyStagedProcesses();
+  testDeletesMultipleProcessesTogether();
   testSnapshotsCaptureDecisionsAndReadyProcesses();
 
   if (failures == 0)

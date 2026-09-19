@@ -50,6 +50,7 @@ public slots:
   void addProcessRequest(int burst, int priority, int arrival);
   void editProcessRequest(int pid, int burst, int priority, int arrival);
   void deleteProcessRequest(int pid);
+  void deleteProcessesRequest(const std::vector<int> &pids);
 
 signals:
   void stateUpdated();

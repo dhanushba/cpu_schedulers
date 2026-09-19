@@ -1,11 +1,15 @@
 #include "ControlPanelWidget.h"
 #include "ProcessTableWidget.h"
 
-#include <QAction>
+#include <QAbstractButton>
 #include <QApplication>
+#include <QItemSelectionModel>
 #include <QLabel>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QSpinBox>
 #include <QTableWidget>
-#include <QToolButton>
+#include <QTimer>
 
 #include <iostream>
 
@@ -28,6 +32,12 @@ int main(int argc, char *argv[]) {
     std::cerr << "FAIL: paused state was not displayed\n";
     return 1;
   }
+  auto *priority = controls.findChild<QSpinBox *>("prioritySpin");
+  if (!priority || !priority->isVisibleTo(&controls) ||
+      !priority->toolTip().contains("Lower")) {
+    std::cerr << "FAIL: workload priority was not clearly available\n";
+    return 1;
+  }
 
   ProcessTableWidget processTable;
   auto *table = processTable.findChild<QTableWidget *>();
@@ -37,27 +47,31 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  processTable.setProcesses({Process(1, 0, 3)});
+  processTable.setProcesses({Process(1, 0, 3), Process(2, 1, 5)});
   if (!table->isVisibleTo(&processTable) || emptyState->isVisibleTo(&processTable)) {
     std::cerr << "FAIL: process table did not replace its empty state\n";
     return 1;
   }
 
-  auto *actionsButton =
-      processTable.findChild<QToolButton *>("processActionsButton");
-  auto *editAction = processTable.findChild<QAction *>("editProcessAction");
-  auto *duplicateAction =
-      processTable.findChild<QAction *>("duplicateProcessAction");
-  auto *deleteAction =
-      processTable.findChild<QAction *>("deleteProcessAction");
-  if (!actionsButton || !actionsButton->menu() || !editAction ||
-      !duplicateAction || !deleteAction) {
-    std::cerr << "FAIL: process row actions were not configured correctly\n";
+  auto *editButton =
+      processTable.findChild<QPushButton *>("editProcessButton");
+  auto *duplicateButton =
+      processTable.findChild<QPushButton *>("duplicateProcessButton");
+  auto *deleteButton =
+      processTable.findChild<QPushButton *>("deleteProcessButton");
+    auto *selectionStatus =
+      processTable.findChild<QLabel *>("processSelectionStatus");
+  if (!editButton || !duplicateButton || !deleteButton ||
+      !selectionStatus ||
+      editButton->isEnabled() || duplicateButton->isEnabled() ||
+      deleteButton->isEnabled()) {
+    std::cerr << "FAIL: process action toolbar was not configured correctly\n";
     return 1;
   }
-  if (!actionsButton->isVisibleTo(&processTable) ||
-      actionsButton->accessibleName() != "Actions for process 1") {
-    std::cerr << "FAIL: process actions were not visible and accessible\n";
+  table->selectRow(0);
+  if (!editButton->isEnabled() || !duplicateButton->isEnabled() ||
+      !deleteButton->isEnabled()) {
+    std::cerr << "FAIL: selecting a process did not enable its actions\n";
     return 1;
   }
 
@@ -69,16 +83,49 @@ int main(int argc, char *argv[]) {
                    });
   QObject::connect(&processTable, &ProcessTableWidget::deleteProcessRequested,
                    [&deletedPid](int pid) { deletedPid = pid; });
-  duplicateAction->trigger();
-  deleteAction->trigger();
+  duplicateButton->click();
+  deleteButton->click();
   if (duplicatedBurst != 3 || deletedPid != 1) {
     std::cerr << "FAIL: process row actions emitted incorrect values\n";
     return 1;
   }
 
   processTable.setEditingEnabled(false);
-  if (editAction->isEnabled()) {
+  if (editButton->isEnabled() || !duplicateButton->isEnabled() ||
+      !deleteButton->isEnabled()) {
     std::cerr << "FAIL: editing remained enabled after simulation start\n";
+    return 1;
+  }
+
+  processTable.setEditingEnabled(true);
+  table->clearSelection();
+  table->selectionModel()->select(
+      table->model()->index(0, 0),
+      QItemSelectionModel::Select | QItemSelectionModel::Rows);
+  table->selectionModel()->select(
+      table->model()->index(1, 0),
+      QItemSelectionModel::Select | QItemSelectionModel::Rows);
+  if (editButton->isEnabled() || duplicateButton->isEnabled() ||
+      !deleteButton->isEnabled() || deleteButton->text() != "Delete 2" ||
+      selectionStatus->text() != "2 selected") {
+    std::cerr << "FAIL: multi-selection action state was incorrect\n";
+    return 1;
+  }
+
+  std::vector<int> deletedPids;
+  QObject::connect(&processTable,
+                   &ProcessTableWidget::deleteProcessesRequested,
+                   [&deletedPids](const std::vector<int> &pids) {
+                     deletedPids = pids;
+                   });
+  QTimer::singleShot(0, []() {
+    auto *dialog = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+    if (dialog)
+      dialog->button(QMessageBox::Yes)->click();
+  });
+  deleteButton->click();
+  if (deletedPids != std::vector<int>({1, 2})) {
+    std::cerr << "FAIL: bulk delete emitted incorrect process IDs\n";
     return 1;
   }
 

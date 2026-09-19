@@ -223,19 +223,28 @@ void SimulationController::editProcessRequest(int pid, int burst, int priority,
 }
 
 void SimulationController::deleteProcessRequest(int pid) {
+  deleteProcessesRequest({pid});
+}
+
+void SimulationController::deleteProcessesRequest(const std::vector<int> &pids) {
+  if (pids.empty())
+    return;
+
   if (!scheduler) {
-    for (auto it = stagedProcesses.begin(); it != stagedProcesses.end(); ++it) {
-      if (it->pid == pid) {
-        stagedProcesses.erase(it);
-        break;
-      }
-    }
+    stagedProcesses.erase(
+        std::remove_if(stagedProcesses.begin(), stagedProcesses.end(),
+                       [&pids](const Process &process) {
+                         return std::find(pids.begin(), pids.end(),
+                                          process.pid) != pids.end();
+                       }),
+        stagedProcesses.end());
     refreshDerivedState();
     emit stateUpdated();
     return;
   }
 
-  scheduler->removeProcess(pid);
+  for (const int pid : pids)
+    scheduler->removeProcess(pid);
   refreshDerivedState();
   rebuildDisplayTimeline();
   emit stateUpdated();
