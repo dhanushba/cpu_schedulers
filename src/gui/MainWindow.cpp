@@ -12,6 +12,8 @@
 #include <QHBoxLayout>
 #include <QSizePolicy>
 #include <QMessageBox>
+#include <QSplitter>
+#include <QStatusBar>
 #include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWidget>
@@ -22,10 +24,8 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   tabs = new QTabWidget(this);
   auto *simulationPage = new QWidget(tabs);
   auto *mainLayout = new QVBoxLayout(simulationPage);
-  auto *bottomLayout = new QHBoxLayout();
   mainLayout->setContentsMargins(14, 14, 14, 14);
   mainLayout->setSpacing(12);
-  bottomLayout->setSpacing(12);
 
   controlPanel = new ControlPanelWidget(simulationPage);
   processTable = new ProcessTableWidget(simulationPage);
@@ -36,9 +36,15 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   mainLayout->addWidget(controlPanel);
   mainLayout->addWidget(ganttChart, 1);
-  bottomLayout->addWidget(processTable, 3);
-  bottomLayout->addWidget(metrics, 2);
-  mainLayout->addLayout(bottomLayout, 2);
+  auto *detailsSplitter = new QSplitter(Qt::Horizontal, simulationPage);
+  detailsSplitter->setObjectName("detailsSplitter");
+  detailsSplitter->addWidget(processTable);
+  detailsSplitter->addWidget(metrics);
+  detailsSplitter->setStretchFactor(0, 3);
+  detailsSplitter->setStretchFactor(1, 2);
+  detailsSplitter->setCollapsible(0, false);
+  detailsSplitter->setCollapsible(1, false);
+  mainLayout->addWidget(detailsSplitter, 2);
 
   controlPanel->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Maximum);
   ganttChart->setMinimumHeight(180);
@@ -52,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setCentralWidget(tabs);
   setWindowTitle("CPU Scheduling Simulator");
   resize(1280, 780);
+  setMinimumSize(900, 640);
 
   applyStyles();
   wireSignals();
@@ -117,6 +124,46 @@ QPushButton:disabled {
   background: #e6ebf0;
   border-color: #d3dbe4;
   color: #8b97a5;
+}
+QPushButton#primaryAction {
+  background: #2563eb;
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+QPushButton#primaryAction:hover {
+  background: #1d4ed8;
+}
+QPushButton#dangerAction {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #be123c;
+}
+QPushButton#dangerAction:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+QLabel#runtimeStatus {
+  border-radius: 8px;
+  padding: 4px 8px;
+  font-weight: 600;
+  background: #e2e8f0;
+  color: #334155;
+}
+QLabel#runtimeStatus[state="running"] {
+  background: #d1fae5;
+  color: #047857;
+}
+QLabel#runtimeStatus[state="paused"] {
+  background: #fef3c7;
+  color: #92400e;
+}
+QLabel#processEmptyState {
+  color: #64748b;
+  padding: 28px;
+}
+QSplitter::handle {
+  background: #dbe4ee;
+  width: 5px;
 }
 QTableWidget {
   background: #ffffff;
@@ -223,4 +270,12 @@ void MainWindow::refreshViews() {
   controlPanel->setRuntimeState(controller->hasScheduler(),
                                 controller->isLiveRunning(),
                                 controller->isPaused());
+  const QString state = controller->isLiveRunning()
+                            ? "Running"
+                            : (controller->isPaused() ? "Paused" : "Ready");
+  statusBar()->showMessage(
+      QString("%1 | %2 | %3 processes | Time %4")
+          .arg(controlPanel->selectedAlgorithmName(), state)
+          .arg(controller->processes().size())
+          .arg(controller->currentTime()));
 }

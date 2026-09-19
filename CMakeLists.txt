@@ -88,6 +88,20 @@ if(BUILD_TESTING)
     set_tests_properties(decision-trace-widget-regression-suite PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
+
+    add_executable(UsabilityWidgetTests
+        tests/UsabilityWidgetTests.cpp
+        src/gui/ControlPanelWidget.cpp
+        src/gui/ProcessTableWidget.cpp
+        include/gui/ControlPanelWidget.h
+        include/gui/ProcessTableWidget.h
+    )
+    target_include_directories(UsabilityWidgetTests PRIVATE "include/gui")
+    target_link_libraries(UsabilityWidgetTests PRIVATE SchedulerCore Qt6::Widgets)
+    add_test(NAME usability-widget-regression-suite COMMAND UsabilityWidgetTests)
+    set_tests_properties(usability-widget-regression-suite PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 endif()
 
 install(TARGETS ${PROJECT_NAME}

@@ -27,20 +27,22 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  ComparisonResult result{SchedulerMode::FCFS,
-                          "FCFS",
-                          {},
-                          {},
-                          2.0,
-                          6.0,
-                          100.0,
-                          1};
-  widget.setResults({result});
+  ComparisonResult result{SchedulerMode::FCFS, "FCFS", {}, {}, 2.0, 6.0,
+                          100.0, 1};
+  ComparisonResult slower{SchedulerMode::RoundRobin, "Round Robin", {}, {},
+                          3.0, 7.0, 80.0, 4};
+  widget.setResults({result, slower});
 
-  if (table->rowCount() != 1 || table->item(0, 0)->text() != "FCFS" ||
+  if (table->rowCount() != 2 || table->item(0, 0)->text() != "FCFS" ||
       table->item(0, 3)->text() != "100.0%" ||
       table->item(0, 4)->text() != "1") {
     std::cerr << "FAIL: comparison result was not rendered correctly\n";
+    return 1;
+  }
+
+  if (!table->item(0, 1)->font().bold() ||
+      table->item(1, 1)->font().bold()) {
+    std::cerr << "FAIL: best comparison metric was not highlighted\n";
     return 1;
   }
 

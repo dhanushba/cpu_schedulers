@@ -5,9 +5,13 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QColor>
+#include <QFont>
 #include <QTableWidget>
 #include <QTableWidgetItem>
 #include <QVBoxLayout>
+
+#include <algorithm>
 
 ComparisonWidget::ComparisonWidget(QWidget *parent) : QWidget(parent) {
   auto *title = new QLabel("Algorithm Comparison", this);
@@ -57,6 +61,29 @@ void ComparisonWidget::setResults(
     const std::vector<ComparisonResult> &results) {
   resultsTable->setRowCount(static_cast<int>(results.size()));
 
+    double bestWaiting = 0.0;
+    double bestTurnaround = 0.0;
+    double bestUtilization = 0.0;
+    int bestSwitches = 0;
+    if (!results.empty()) {
+        bestWaiting = std::min_element(
+                results.begin(), results.end(), [](const auto &left, const auto &right) {
+                    return left.averageWaitingTime < right.averageWaitingTime;
+                })->averageWaitingTime;
+        bestTurnaround = std::min_element(
+                results.begin(), results.end(), [](const auto &left, const auto &right) {
+                    return left.averageTurnaroundTime < right.averageTurnaroundTime;
+                })->averageTurnaroundTime;
+        bestUtilization = std::max_element(
+                results.begin(), results.end(), [](const auto &left, const auto &right) {
+                    return left.cpuUtilization < right.cpuUtilization;
+                })->cpuUtilization;
+        bestSwitches = std::min_element(
+                results.begin(), results.end(), [](const auto &left, const auto &right) {
+                    return left.contextSwitches < right.contextSwitches;
+                })->contextSwitches;
+    }
+
   for (int row = 0; row < static_cast<int>(results.size()); row++) {
     const auto &result = results[row];
     resultsTable->setItem(
@@ -73,6 +100,24 @@ void ComparisonWidget::setResults(
             QString("%1%").arg(result.cpuUtilization, 0, 'f', 1)));
     resultsTable->setItem(
         row, 4, new QTableWidgetItem(QString::number(result.contextSwitches)));
+
+        const bool bestValues[] = {
+                false,
+                result.averageWaitingTime == bestWaiting,
+                result.averageTurnaroundTime == bestTurnaround,
+                result.cpuUtilization == bestUtilization,
+                result.contextSwitches == bestSwitches,
+        };
+        for (int column = 1; column < resultsTable->columnCount(); column++) {
+            if (!bestValues[column])
+                continue;
+            auto *item = resultsTable->item(row, column);
+            item->setBackground(QColor("#d1fae5"));
+            QFont font = item->font();
+            font.setBold(true);
+            item->setFont(font);
+            item->setToolTip("Best value for this workload");
+        }
   }
 
   statusLabel->setText(
