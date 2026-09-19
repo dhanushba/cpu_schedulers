@@ -76,6 +76,18 @@ if(BUILD_TESTING)
     set_tests_properties(comparison-widget-regression-suite PROPERTIES
         ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
     )
+
+    add_executable(DecisionTraceWidgetTests
+        tests/DecisionTraceWidgetTests.cpp
+        src/gui/DecisionTraceWidget.cpp
+        include/gui/DecisionTraceWidget.h
+    )
+    target_include_directories(DecisionTraceWidgetTests PRIVATE "include/gui")
+    target_link_libraries(DecisionTraceWidgetTests PRIVATE SchedulerCore Qt6::Widgets)
+    add_test(NAME decision-trace-widget-regression-suite COMMAND DecisionTraceWidgetTests)
+    set_tests_properties(decision-trace-widget-regression-suite PROPERTIES
+        ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+    )
 endif()
 
 install(TARGETS ${PROJECT_NAME}

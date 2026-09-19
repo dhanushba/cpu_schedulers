@@ -3,6 +3,7 @@
 #include "ComparisonRunner.h"
 #include "ComparisonWidget.h"
 #include "ControlPanelWidget.h"
+#include "DecisionTraceWidget.h"
 #include "GanttChartWidget.h"
 #include "MetricsWidget.h"
 #include "ProcessTableWidget.h"
@@ -31,6 +32,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   ganttChart = new GanttChartWidget(simulationPage);
   metrics = new MetricsWidget(simulationPage);
   comparison = new ComparisonWidget(tabs);
+  decisionTrace = new DecisionTraceWidget(tabs);
 
   mainLayout->addWidget(controlPanel);
   mainLayout->addWidget(ganttChart, 1);
@@ -45,6 +47,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
 
   tabs->addTab(simulationPage, "Simulation");
   tabs->addTab(comparison, "Compare Algorithms");
+  tabs->addTab(decisionTrace, "Decision Trace");
 
   setCentralWidget(tabs);
   setWindowTitle("CPU Scheduling Simulator");
@@ -145,12 +148,12 @@ QTabBar::tab:selected {
   background: #ffffff;
   border-bottom-color: #ffffff;
 }
-QLabel#comparisonTitle {
+QLabel#comparisonTitle, QLabel#traceTitle {
   font-size: 18px;
   font-weight: 600;
   color: #0f172a;
 }
-QLabel#comparisonStatus {
+QLabel#comparisonStatus, QLabel#traceStatus {
   color: #64748b;
 }
 GanttChartWidget {
@@ -213,6 +216,7 @@ void MainWindow::wireSignals() {
 void MainWindow::refreshViews() {
   processTable->setProcesses(controller->processes());
   ganttChart->setTimeline(controller->ganttChart(), controller->currentTime());
+  decisionTrace->setSnapshots(controller->snapshots());
   metrics->setMetrics(controller->currentTime(), controller->currentRunningPid(),
                       controller->averageWaitingTime(),
                       controller->averageTurnaroundTime());

@@ -8,6 +8,7 @@ class GanttChartWidget;
 class MetricsWidget;
 class SimulationController;
 class ComparisonWidget;
+class DecisionTraceWidget;
 class QTabWidget;
 
 class MainWindow : public QMainWindow {
@@ -27,5 +28,6 @@ private:
   MetricsWidget *metrics;
   SimulationController *controller;
   ComparisonWidget *comparison;
+  DecisionTraceWidget *decisionTrace;
   QTabWidget *tabs;
 };
