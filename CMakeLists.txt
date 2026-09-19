@@ -2,6 +2,7 @@
 cmake_minimum_required(VERSION 3.16)
 project(CPUScheduler VERSION 1.0 LANGUAGES CXX)
 include(GNUInstallDirs)
+include(CTest)
 
 # Require C++17 (Mandatory for Qt6)
 set(CMAKE_CXX_STANDARD 17)
@@ -21,10 +22,12 @@ file(GLOB_RECURSE GUI_SOURCES "src/gui/*.cpp")
 file(GLOB_RECURSE GUI_HEADERS "include/gui/*.h")
 set(MAIN_SOURCE "src/main.cpp")
 
-# 4. Create the Executable
+# 4. Create the Core Library and Executable
+add_library(SchedulerCore STATIC ${CORE_SOURCES})
+target_include_directories(SchedulerCore PUBLIC "include/core")
+
 add_executable(${PROJECT_NAME} 
     ${MAIN_SOURCE}
-    ${CORE_SOURCES}
     ${GUI_SOURCES}
     ${GUI_HEADERS}
 )
@@ -40,8 +43,15 @@ target_include_directories(${PROJECT_NAME} PRIVATE
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE 
+    SchedulerCore
     Qt6::Widgets
 )
+
+if(BUILD_TESTING)
+    add_executable(SchedulerTests tests/SchedulerTests.cpp)
+    target_link_libraries(SchedulerTests PRIVATE SchedulerCore)
+    add_test(NAME scheduler-regression-suite COMMAND SchedulerTests)
+endif()
 
 install(TARGETS ${PROJECT_NAME}
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
