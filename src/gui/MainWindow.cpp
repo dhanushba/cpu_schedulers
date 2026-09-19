@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 
+#include "ComparisonRunner.h"
+#include "ComparisonWidget.h"
 #include "ControlPanelWidget.h"
 #include "GanttChartWidget.h"
 #include "MetricsWidget.h"
@@ -8,23 +10,27 @@
 
 #include <QHBoxLayout>
 #include <QSizePolicy>
+#include <QMessageBox>
+#include <QTabWidget>
 #include <QVBoxLayout>
 #include <QWidget>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   controller = new SimulationController(this);
 
-  auto *root = new QWidget(this);
-  auto *mainLayout = new QVBoxLayout(root);
+  tabs = new QTabWidget(this);
+  auto *simulationPage = new QWidget(tabs);
+  auto *mainLayout = new QVBoxLayout(simulationPage);
   auto *bottomLayout = new QHBoxLayout();
   mainLayout->setContentsMargins(14, 14, 14, 14);
   mainLayout->setSpacing(12);
   bottomLayout->setSpacing(12);
 
-  controlPanel = new ControlPanelWidget(root);
-  processTable = new ProcessTableWidget(root);
-  ganttChart = new GanttChartWidget(root);
-  metrics = new MetricsWidget(root);
+  controlPanel = new ControlPanelWidget(simulationPage);
+  processTable = new ProcessTableWidget(simulationPage);
+  ganttChart = new GanttChartWidget(simulationPage);
+  metrics = new MetricsWidget(simulationPage);
+  comparison = new ComparisonWidget(tabs);
 
   mainLayout->addWidget(controlPanel);
   mainLayout->addWidget(ganttChart, 1);
@@ -37,7 +43,10 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   processTable->setMinimumHeight(220);
   metrics->setMinimumWidth(260);
 
-  setCentralWidget(root);
+  tabs->addTab(simulationPage, "Simulation");
+  tabs->addTab(comparison, "Compare Algorithms");
+
+  setCentralWidget(tabs);
   setWindowTitle("CPU Scheduling Simulator");
   resize(1280, 780);
 
@@ -123,6 +132,27 @@ QHeaderView::section {
   border-bottom: 1px solid #c3ceda;
   font-weight: 600;
 }
+QTabWidget::pane {
+  border: 0;
+}
+QTabBar::tab {
+  background: #dde8f4;
+  border: 1px solid #c3ceda;
+  padding: 9px 18px;
+  margin-right: 4px;
+}
+QTabBar::tab:selected {
+  background: #ffffff;
+  border-bottom-color: #ffffff;
+}
+QLabel#comparisonTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #0f172a;
+}
+QLabel#comparisonStatus {
+  color: #64748b;
+}
 GanttChartWidget {
   border: 1px solid #c9d5e2;
   border-radius: 10px;
@@ -159,6 +189,17 @@ void MainWindow::wireSignals() {
 
   connect(processTable, &ProcessTableWidget::deleteProcessRequested, controller,
           &SimulationController::deleteProcessRequest);
+
+  connect(comparison, &ComparisonWidget::compareRequested, this, [this]() {
+    const auto workload = controller->processes();
+    if (workload.empty()) {
+      QMessageBox::information(this, "No Processes",
+                               "Add at least one process before comparing.");
+      return;
+    }
+    comparison->setResults(
+        ComparisonRunner::run(workload, controlPanel->quantum()));
+  });
 
   connect(controller, &SimulationController::stateUpdated, this,
           &MainWindow::refreshViews);
