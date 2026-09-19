@@ -5,7 +5,6 @@
 
 #include "Process.h"
 
-class QEvent;
 class QTableWidget;
 class QLabel;
 
@@ -18,17 +17,12 @@ public:
   void setProcesses(const std::vector<Process> &processes);
   void setEditingEnabled(bool enabled);
 
-protected:
-  bool eventFilter(QObject *watched, QEvent *event) override;
-
 signals:
   void editProcessRequested(int pid, int burst, int priority, int arrival);
   void duplicateProcessRequested(int burst, int priority, int arrival);
   void deleteProcessRequested(int pid);
 
 private:
-  void showActionsForRow(int row);
-
   QTableWidget *table;
   QLabel *emptyStateLabel;
   bool editingEnabled = true;
