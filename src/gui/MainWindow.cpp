@@ -146,6 +146,10 @@ QLabel#processTableTitle {
   font-size: 15px;
   font-weight: 600;
 }
+QLabel#processSelectionStatus {
+  color: #6e6e73;
+  padding-left: 6px;
+}
 QPushButton#editProcessButton,
 QPushButton#duplicateProcessButton,
 QPushButton#deleteProcessButton {
@@ -256,6 +260,8 @@ void MainWindow::wireSignals() {
 
   connect(processTable, &ProcessTableWidget::deleteProcessRequested, controller,
           &SimulationController::deleteProcessRequest);
+    connect(processTable, &ProcessTableWidget::deleteProcessesRequested,
+      controller, &SimulationController::deleteProcessesRequest);
     connect(processTable, &ProcessTableWidget::editProcessRequested, controller,
       &SimulationController::editProcessRequest);
     connect(processTable, &ProcessTableWidget::duplicateProcessRequested,

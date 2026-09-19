@@ -6,6 +6,7 @@
 #include <QHeaderView>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMessageBox>
 #include <QPushButton>
 #include <QSpinBox>
 #include <QTableWidget>
@@ -19,7 +20,7 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
                                     "Status"});
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->setSelectionBehavior(QAbstractItemView::SelectRows);
-  table->setSelectionMode(QAbstractItemView::SingleSelection);
+  table->setSelectionMode(QAbstractItemView::ExtendedSelection);
   table->setEditTriggers(QAbstractItemView::NoEditTriggers);
   table->setAlternatingRowColors(true);
   table->verticalHeader()->setVisible(false);
@@ -30,6 +31,8 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
 
   auto *title = new QLabel("Processes", this);
   title->setObjectName("processTableTitle");
+  selectionLabel = new QLabel(this);
+  selectionLabel->setObjectName("processSelectionStatus");
   editButton = new QPushButton("Edit", this);
   editButton->setObjectName("editProcessButton");
   duplicateButton = new QPushButton("Duplicate", this);
@@ -41,6 +44,7 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   auto *toolbar = new QHBoxLayout();
   toolbar->setSpacing(6);
   toolbar->addWidget(title);
+  toolbar->addWidget(selectionLabel);
   toolbar->addStretch();
   toolbar->addWidget(editButton);
   toolbar->addWidget(duplicateButton);
@@ -58,18 +62,16 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   connect(editButton, &QPushButton::clicked, this,
           &ProcessTableWidget::editSelectedProcess);
   connect(duplicateButton, &QPushButton::clicked, this, [this]() {
-    const int row = selectedRow();
-    if (row < 0)
+    const auto rows = selectedRows();
+    if (rows.size() != 1)
       return;
+    const int row = rows.front();
     emit duplicateProcessRequested(table->item(row, 2)->text().toInt(),
                                    table->item(row, 3)->text().toInt(),
                                    table->item(row, 1)->text().toInt());
   });
-  connect(deleteButton, &QPushButton::clicked, this, [this]() {
-    const int row = selectedRow();
-    if (row >= 0)
-      emit deleteProcessRequested(table->item(row, 0)->text().toInt());
-  });
+  connect(deleteButton, &QPushButton::clicked, this,
+          &ProcessTableWidget::deleteSelectedProcesses);
 
   updateActionState();
 }
@@ -102,22 +104,35 @@ void ProcessTableWidget::setEditingEnabled(bool enabled) {
   updateActionState();
 }
 
-int ProcessTableWidget::selectedRow() const {
+std::vector<int> ProcessTableWidget::selectedRows() const {
   const auto rows = table->selectionModel()->selectedRows();
-  return rows.isEmpty() ? -1 : rows.first().row();
+  std::vector<int> selected;
+  selected.reserve(rows.size());
+  for (const auto &index : rows)
+    selected.push_back(index.row());
+  return selected;
 }
 
 void ProcessTableWidget::updateActionState() {
-  const bool hasSelection = selectedRow() >= 0;
-  editButton->setEnabled(hasSelection && editingEnabled);
-  duplicateButton->setEnabled(hasSelection);
-  deleteButton->setEnabled(hasSelection);
+  const int selectedCount = static_cast<int>(selectedRows().size());
+  const bool hasSingleSelection = selectedCount == 1;
+  editButton->setEnabled(hasSingleSelection && editingEnabled);
+  duplicateButton->setEnabled(hasSingleSelection);
+  deleteButton->setEnabled(selectedCount > 0);
+  deleteButton->setText(selectedCount > 1
+                            ? QString("Delete %1").arg(selectedCount)
+                            : "Delete");
+  selectionLabel->setText(selectedCount > 0
+                              ? QString("%1 selected").arg(selectedCount)
+                              : QString());
+  selectionLabel->setVisible(selectedCount > 0);
 }
 
 void ProcessTableWidget::editSelectedProcess() {
-  const int row = selectedRow();
-  if (row < 0 || !editingEnabled)
+  const auto rows = selectedRows();
+  if (rows.size() != 1 || !editingEnabled)
     return;
+  const int row = rows.front();
 
   const int pid = table->item(row, 0)->text().toInt();
   QDialog dialog(this);
@@ -147,4 +162,30 @@ void ProcessTableWidget::editSelectedProcess() {
   if (dialog.exec() == QDialog::Accepted)
     emit editProcessRequested(pid, burst->value(), priority->value(),
                               arrival->value());
+}
+
+void ProcessTableWidget::deleteSelectedProcesses() {
+  const auto rows = selectedRows();
+  if (rows.empty())
+    return;
+
+  std::vector<int> pids;
+  pids.reserve(rows.size());
+  for (const int row : rows)
+    pids.push_back(table->item(row, 0)->text().toInt());
+
+  if (pids.size() > 1) {
+    const auto answer = QMessageBox::question(
+        this, "Delete Processes",
+        QString("Delete %1 selected processes? This cannot be undone.")
+            .arg(pids.size()),
+        QMessageBox::Cancel | QMessageBox::Yes, QMessageBox::Cancel);
+    if (answer != QMessageBox::Yes)
+      return;
+  }
+
+  if (pids.size() == 1)
+    emit deleteProcessRequested(pids.front());
+  else
+    emit deleteProcessesRequested(pids);
 }
