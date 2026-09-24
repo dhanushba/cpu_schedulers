@@ -289,6 +289,7 @@ void MainWindow::wireSignals() {
 
 void MainWindow::refreshViews() {
   processTable->setEditingEnabled(!controller->hasScheduler());
+  processTable->setAlgorithmName(controlPanel->selectedAlgorithmName());
   processTable->setProcesses(controller->processes());
   ganttChart->setTimeline(controller->ganttChart(), controller->currentTime());
   decisionTrace->setSnapshots(controller->snapshots());

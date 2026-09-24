@@ -131,6 +131,42 @@ void testCompletedSimulationReportsIdle() {
                  "preemptive priority interrupts for the lower priority value");
         }
 
+        void testAllAlgorithmSelectionsReachScheduler() {
+          SimulationController fcfs;
+          fcfs.addProcessRequest(4, 0, 0);
+          fcfs.addProcessRequest(1, 0, 0);
+          fcfs.runOfflineInstant();
+          const auto fcfsTimeline = fcfs.ganttChart();
+          expect(fcfsTimeline.size() == 2 && fcfsTimeline[0].pid == 1 &&
+               fcfsTimeline[0].endTime == 4 && fcfsTimeline[1].pid == 2,
+             "default algorithm index selects FCFS");
+
+          SimulationController sjf;
+          sjf.setAlgorithm(1);
+          sjf.setPreemptiveMode(false);
+          sjf.addProcessRequest(4, 0, 0);
+          sjf.addProcessRequest(1, 0, 0);
+          sjf.runOfflineInstant();
+          const auto sjfTimeline = sjf.ganttChart();
+          expect(sjfTimeline.size() == 2 && sjfTimeline[0].pid == 2 &&
+               sjfTimeline[0].endTime == 1 && sjfTimeline[1].pid == 1,
+             "algorithm index 1 selects non-preemptive SJF");
+
+          SimulationController roundRobin;
+          roundRobin.setAlgorithm(3);
+          roundRobin.setQuantum(1);
+          roundRobin.addProcessRequest(2, 0, 0);
+          roundRobin.addProcessRequest(2, 0, 0);
+          roundRobin.runOfflineInstant();
+          const auto roundRobinTimeline = roundRobin.ganttChart();
+          expect(roundRobinTimeline.size() == 4 &&
+               roundRobinTimeline[0].pid == 1 &&
+               roundRobinTimeline[1].pid == 2 &&
+               roundRobinTimeline[2].pid == 1 &&
+               roundRobinTimeline[3].pid == 2,
+             "algorithm index 3 selects Round Robin with configured quantum");
+        }
+
 void testSnapshotsCaptureDecisionsAndReadyProcesses() {
   SimulationController controller;
   controller.setAlgorithm(1);
@@ -163,6 +199,7 @@ int main() {
   testEditsOnlyStagedProcesses();
   testDeletesMultipleProcessesTogether();
   testPriorityConfigurationReachesScheduler();
+  testAllAlgorithmSelectionsReachScheduler();
   testSnapshotsCaptureDecisionsAndReadyProcesses();
 
   if (failures == 0)
