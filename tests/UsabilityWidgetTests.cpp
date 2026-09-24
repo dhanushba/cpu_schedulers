@@ -3,6 +3,7 @@
 
 #include <QAbstractButton>
 #include <QApplication>
+#include <QComboBox>
 #include <QItemSelectionModel>
 #include <QLabel>
 #include <QMessageBox>
@@ -17,6 +18,20 @@ int main(int argc, char *argv[]) {
   QApplication app(argc, argv);
 
   ControlPanelWidget controls;
+  auto *algorithm = controls.findChild<QComboBox *>("algorithmCombo");
+  auto *priority = controls.findChild<QSpinBox *>("prioritySpin");
+  if (!algorithm || !priority || priority->isEnabled() ||
+      !priority->toolTip().contains("Select Priority")) {
+    std::cerr << "FAIL: priority input was active for FCFS\n";
+    return 1;
+  }
+  priority->setValue(4);
+  algorithm->setCurrentIndex(2);
+  if (!priority->isEnabled() || priority->value() != 4 ||
+      !priority->toolTip().contains("Lower")) {
+    std::cerr << "FAIL: Priority mode did not enable the preserved value\n";
+    return 1;
+  }
   auto *status = controls.findChild<QLabel *>("runtimeStatus");
   if (!status || status->text() != "Ready") {
     std::cerr << "FAIL: control panel did not start ready\n";
@@ -32,7 +47,6 @@ int main(int argc, char *argv[]) {
     std::cerr << "FAIL: paused state was not displayed\n";
     return 1;
   }
-  auto *priority = controls.findChild<QSpinBox *>("prioritySpin");
   if (!priority || !priority->isVisibleTo(&controls) ||
       !priority->toolTip().contains("Lower")) {
     std::cerr << "FAIL: workload priority was not clearly available\n";
