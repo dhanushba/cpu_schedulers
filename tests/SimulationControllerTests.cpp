@@ -96,6 +96,41 @@ void testCompletedSimulationReportsIdle() {
           expect(updates == 1, "bulk delete refreshes the UI once");
         }
 
+        void testPriorityConfigurationReachesScheduler() {
+          SimulationController nonPreemptive;
+          nonPreemptive.setAlgorithm(2);
+          nonPreemptive.setPreemptiveMode(false);
+          nonPreemptive.addProcessRequest(5, 2, 0);
+          nonPreemptive.addProcessRequest(2, 1, 1);
+          nonPreemptive.runOfflineInstant();
+
+          const auto nonPreemptiveTimeline = nonPreemptive.ganttChart();
+          expect(nonPreemptiveTimeline.size() == 2 &&
+                     nonPreemptiveTimeline[0].pid == 1 &&
+                     nonPreemptiveTimeline[0].startTime == 0 &&
+                     nonPreemptiveTimeline[0].endTime == 5 &&
+                     nonPreemptiveTimeline[1].pid == 2,
+                 "non-preemptive priority runs the current process to completion");
+
+          SimulationController preemptive;
+          preemptive.setAlgorithm(2);
+          preemptive.setPreemptiveMode(true);
+          preemptive.addProcessRequest(5, 2, 0);
+          preemptive.addProcessRequest(2, 1, 1);
+          preemptive.runOfflineInstant();
+
+          const auto preemptiveTimeline = preemptive.ganttChart();
+          expect(preemptiveTimeline.size() == 3 &&
+                     preemptiveTimeline[0].pid == 1 &&
+                     preemptiveTimeline[0].startTime == 0 &&
+                     preemptiveTimeline[0].endTime == 1 &&
+                     preemptiveTimeline[1].pid == 2 &&
+                     preemptiveTimeline[1].startTime == 1 &&
+                     preemptiveTimeline[1].endTime == 3 &&
+                     preemptiveTimeline[2].pid == 1,
+                 "preemptive priority interrupts for the lower priority value");
+        }
+
 void testSnapshotsCaptureDecisionsAndReadyProcesses() {
   SimulationController controller;
   controller.setAlgorithm(1);
@@ -127,6 +162,7 @@ int main() {
   testDisplayedWorkloadMetrics();
   testEditsOnlyStagedProcesses();
   testDeletesMultipleProcessesTogether();
+  testPriorityConfigurationReachesScheduler();
   testSnapshotsCaptureDecisionsAndReadyProcesses();
 
   if (failures == 0)

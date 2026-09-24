@@ -38,6 +38,32 @@ int main(int argc, char *argv[]) {
     std::cerr << "FAIL: workload priority was not clearly available\n";
     return 1;
   }
+  auto *burst = controls.findChild<QSpinBox *>("burstSpin");
+  auto *arrival = controls.findChild<QSpinBox *>("arrivalSpin");
+  QPushButton *addProcess = nullptr;
+  for (auto *button : controls.findChildren<QPushButton *>()) {
+    if (button->text() == "Add Process") {
+      addProcess = button;
+      break;
+    }
+  }
+  if (!burst || !arrival || !addProcess) {
+    std::cerr << "FAIL: process input controls were not available\n";
+    return 1;
+  }
+  int emittedPriority = -1;
+  QObject::connect(&controls, &ControlPanelWidget::addProcessClicked,
+                   [&emittedPriority](int, int processPriority, int) {
+                     emittedPriority = processPriority;
+                   });
+  priority->setValue(4);
+  burst->setValue(3);
+  arrival->setValue(0);
+  addProcess->click();
+  if (emittedPriority != 4) {
+    std::cerr << "FAIL: process input did not emit the selected priority\n";
+    return 1;
+  }
 
   ProcessTableWidget processTable;
   auto *table = processTable.findChild<QTableWidget *>();
@@ -47,9 +73,13 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  processTable.setProcesses({Process(1, 0, 3), Process(2, 1, 5)});
+  processTable.setProcesses({Process(1, 0, 3, 4), Process(2, 1, 5, 2)});
   if (!table->isVisibleTo(&processTable) || emptyState->isVisibleTo(&processTable)) {
     std::cerr << "FAIL: process table did not replace its empty state\n";
+    return 1;
+  }
+  if (table->item(0, 3)->text() != "4") {
+    std::cerr << "FAIL: process table did not display process priority\n";
     return 1;
   }
 

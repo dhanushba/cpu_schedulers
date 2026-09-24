@@ -27,6 +27,7 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   quantumSpin->setValue(2);
 
   burstSpin = new QSpinBox(this);
+        burstSpin->setObjectName("burstSpin");
   burstSpin->setRange(1, 999);
   burstSpin->setValue(5);
 
@@ -37,6 +38,7 @@ ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
         prioritySpin->setToolTip("Lower values have higher scheduling priority");
 
   arrivalSpin = new QSpinBox(this);
+        arrivalSpin->setObjectName("arrivalSpin");
   arrivalSpin->setRange(0, 9999);
   arrivalSpin->setValue(0);
 
