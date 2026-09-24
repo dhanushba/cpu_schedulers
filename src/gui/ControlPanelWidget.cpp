@@ -242,14 +242,10 @@ void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
   quantumSpin->setVisible(usesQuantum);
   quantumSpin->setEnabled(usesQuantum && !configLocked);
 
-        priorityLabel->setText(usesPriority ? "Priority (lower first)"
-                                                                                                                                                        : "Priority (Priority only)");
-        priorityLabel->setToolTip(
-                        usesPriority ? "Lower values have higher scheduling priority"
-                                                                         : "This value is ignored by the selected algorithm");
-        prioritySpin->setVisible(true);
+        priorityLabel->setText("Priority (lower first)");
+        priorityLabel->setToolTip("Lower values have higher scheduling priority");
+        priorityLabel->setVisible(usesPriority);
+        prioritySpin->setVisible(usesPriority);
         prioritySpin->setEnabled(usesPriority);
-        prioritySpin->setToolTip(
-                        usesPriority ? "Lower values have higher scheduling priority"
-                                                                         : "Select Priority scheduling to change this value");
+        prioritySpin->setToolTip("Lower values have higher scheduling priority");
 }
