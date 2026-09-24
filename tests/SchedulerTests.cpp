@@ -181,6 +181,54 @@ void testRoundRobin() {
                  "Round Robin timeline");
 }
 
+void testSjfEqualBurstUsesArrivalOrder() {
+  SJFScheduler scheduler(false);
+  scheduler.addProcess(Process(3, 0, 5));
+  scheduler.addProcess(Process(1, 4, 2));
+  scheduler.addProcess(Process(2, 1, 2));
+  scheduler.runOffline();
+
+  expectTimeline(scheduler.getGanttChart(),
+                 {ExecutionRecord(3, 0, 5), ExecutionRecord(2, 5, 7),
+                  ExecutionRecord(1, 7, 9)},
+                 "SJF equal-burst arrival-order timeline");
+}
+
+void testPriorityTieUsesArrivalOrder() {
+  PriorityScheduler scheduler(false);
+  scheduler.addProcess(Process(3, 0, 5, 0));
+  scheduler.addProcess(Process(1, 4, 1, 2));
+  scheduler.addProcess(Process(2, 1, 1, 2));
+  scheduler.runOffline();
+
+  expectTimeline(scheduler.getGanttChart(),
+                 {ExecutionRecord(3, 0, 5), ExecutionRecord(2, 5, 6),
+                  ExecutionRecord(1, 6, 7)},
+                 "Priority equal-priority arrival-order timeline");
+}
+
+void testSjfTimelineIncludesInitialIdleTime() {
+  SJFScheduler scheduler(false);
+  scheduler.addProcess(Process(1, 3, 2));
+  scheduler.runOffline();
+
+  expectTimeline(scheduler.getGanttChart(),
+                 {ExecutionRecord(-1, 0, 3), ExecutionRecord(1, 3, 5)},
+                 "SJF initial-idle timeline");
+}
+
+void testRoundRobinClampsInvalidQuantum() {
+  RoundRobinScheduler scheduler(0);
+  scheduler.addProcess(Process(1, 0, 2));
+  scheduler.addProcess(Process(2, 0, 2));
+  scheduler.runOffline();
+
+  expectTimeline(scheduler.getGanttChart(),
+                 {ExecutionRecord(1, 0, 1), ExecutionRecord(2, 1, 2),
+                  ExecutionRecord(1, 2, 3), ExecutionRecord(2, 3, 4)},
+                 "Round Robin invalid-quantum fallback timeline");
+}
+
 } // namespace
 
 int main() {
@@ -190,6 +238,10 @@ int main() {
   testPriorityNonPreemptive();
   testPriorityPreemptive();
   testRoundRobin();
+  testSjfEqualBurstUsesArrivalOrder();
+  testPriorityTieUsesArrivalOrder();
+  testSjfTimelineIncludesInitialIdleTime();
+  testRoundRobinClampsInvalidQuantum();
 
   if (failures != 0) {
     std::cerr << failures << " scheduler regression assertion(s) failed.\n";

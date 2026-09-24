@@ -1,5 +1,6 @@
 #pragma once
 
+#include <QString>
 #include <QWidget>
 #include <vector>
 
@@ -15,6 +16,7 @@ class ProcessTableWidget : public QWidget {
 public:
   explicit ProcessTableWidget(QWidget *parent = nullptr);
 
+  void setAlgorithmName(const QString &name);
   void setProcesses(const std::vector<Process> &processes);
   void setEditingEnabled(bool enabled);
 
@@ -36,5 +38,6 @@ private:
   QPushButton *editButton;
   QPushButton *duplicateButton;
   QPushButton *deleteButton;
+  QString algorithmName;
   bool editingEnabled = true;
 };

@@ -13,8 +13,11 @@ private:
 
   struct PriorityCompare {
     bool operator()(const Process &lhs, const Process &rhs) const {
-      if (lhs.priority == rhs.priority)
-        return lhs.pid > rhs.pid;
+      if (lhs.priority == rhs.priority) {
+        if (lhs.arrivalTime == rhs.arrivalTime)
+          return lhs.pid > rhs.pid;
+        return lhs.arrivalTime > rhs.arrivalTime;
+      }
       return lhs.priority > rhs.priority;
     }
   };

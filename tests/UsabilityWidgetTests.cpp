@@ -80,6 +80,7 @@ int main(int argc, char *argv[]) {
   }
 
   ProcessTableWidget processTable;
+  processTable.setAlgorithmName("Priority");
   auto *table = processTable.findChild<QTableWidget *>();
   auto *emptyState = processTable.findChild<QLabel *>("processEmptyState");
   if (!table || !emptyState || !emptyState->isVisibleTo(&processTable)) {
@@ -87,13 +88,33 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  processTable.setProcesses({Process(1, 0, 3, 4), Process(2, 1, 5, 2)});
+  std::vector<Process> displayedProcesses{Process(1, 0, 3, 4),
+                                          Process(2, 1, 5, 2)};
+  processTable.setProcesses(displayedProcesses);
   if (!table->isVisibleTo(&processTable) || emptyState->isVisibleTo(&processTable)) {
     std::cerr << "FAIL: process table did not replace its empty state\n";
     return 1;
   }
-  if (table->item(0, 3)->text() != "4") {
+      if (table->horizontalHeaderItem(0)->text() != "PID (Priority)" ||
+        table->item(0, 0)->text() != "1" ||
+        table->item(0, 0)->data(Qt::UserRole).toInt() != 1 ||
+      table->item(0, 3)->text() != "4" ||
+      table->item(1, 3)->text() != "2") {
     std::cerr << "FAIL: process table did not display process priority\n";
+    return 1;
+  }
+
+  processTable.setAlgorithmName("Round Robin");
+  displayedProcesses.emplace_back(3, 2, 4, 1);
+  processTable.setProcesses(displayedProcesses);
+  if (table->horizontalHeaderItem(0)->text() != "PID (Round Robin)" ||
+      table->item(0, 0)->text() != "1" ||
+      table->item(1, 0)->text() != "2" ||
+      table->item(2, 0)->text() != "3" ||
+      table->item(0, 3)->text() != "-" ||
+      table->item(2, 3)->text() != "-" ||
+      table->item(2, 3)->data(Qt::UserRole).toInt() != 1) {
+    std::cerr << "FAIL: process table did not preserve process algorithms\n";
     return 1;
   }
 
@@ -135,9 +156,9 @@ int main(int argc, char *argv[]) {
   }
 
   processTable.setEditingEnabled(false);
-  if (editButton->isEnabled() || !duplicateButton->isEnabled() ||
-      !deleteButton->isEnabled()) {
-    std::cerr << "FAIL: editing remained enabled after simulation start\n";
+  if (editButton->isEnabled() || duplicateButton->isEnabled() ||
+      deleteButton->isEnabled()) {
+    std::cerr << "FAIL: process actions remained enabled after simulation start\n";
     return 1;
   }
 

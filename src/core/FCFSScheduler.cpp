@@ -31,7 +31,9 @@ void FCFSScheduler::tick() {
     if (!isSorted) { //sorting by arrival time
     sort(processes.begin(), processes.end(),
         [](const Process& a, const Process& b) {
-            return a.arrivalTime < b.arrivalTime;
+            return a.arrivalTime == b.arrivalTime
+                ? a.pid < b.pid
+                : a.arrivalTime < b.arrivalTime;
         });
     isSorted = true;
 }
@@ -88,7 +90,9 @@ void FCFSScheduler::runOffline() {
 if (!isSorted) {
     sort(processes.begin(), processes.end(),
         [](const Process& a, const Process& b) {
-            return a.arrivalTime < b.arrivalTime;
+            return a.arrivalTime == b.arrivalTime
+                ? a.pid < b.pid
+                : a.arrivalTime < b.arrivalTime;
         });
     isSorted = true;
 }

@@ -99,6 +99,10 @@ void SJFScheduler::tick() {
           processes[currentRunningProcessIndex].burstTime;
       currentRunningProcessIndex = -1;
     }
+  } else if (!ganttChart.empty() && ganttChart.back().pid == -1) {
+    ganttChart.back().endTime++;
+  } else {
+    ganttChart.emplace_back(-1, currentTime, currentTime + 1);
   }
 
   currentTime++;

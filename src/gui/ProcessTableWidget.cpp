@@ -15,9 +15,9 @@
 ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   table = new QTableWidget(this);
   table->setColumnCount(8);
-  table->setHorizontalHeaderLabels({"PID", "Arrival", "Burst", "Priority",
-                                    "Remaining", "Waiting", "Turnaround",
-                                    "Status"});
+  table->setHorizontalHeaderLabels(
+      {"PID", "Arrival", "Burst", "Priority", "Remaining", "Waiting",
+       "Turnaround", "Status"});
   table->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
   table->setSelectionBehavior(QAbstractItemView::SelectRows);
   table->setSelectionMode(QAbstractItemView::ExtendedSelection);
@@ -67,7 +67,9 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
       return;
     const int row = rows.front();
     emit duplicateProcessRequested(table->item(row, 2)->text().toInt(),
-                                   table->item(row, 3)->text().toInt(),
+                     table->item(row, 3)
+                       ->data(Qt::UserRole)
+                       .toInt(),
                                    table->item(row, 1)->text().toInt());
   });
   connect(deleteButton, &QPushButton::clicked, this,
@@ -76,16 +78,26 @@ ProcessTableWidget::ProcessTableWidget(QWidget *parent) : QWidget(parent) {
   updateActionState();
 }
 
+void ProcessTableWidget::setAlgorithmName(const QString &name) {
+  algorithmName = name;
+  table->horizontalHeaderItem(0)->setText(QString("PID (%1)").arg(name));
+}
+
 void ProcessTableWidget::setProcesses(const std::vector<Process> &processes) {
   table->setRowCount(static_cast<int>(processes.size()));
   table->setVisible(!processes.empty());
   emptyStateLabel->setVisible(processes.empty());
   for (int i = 0; i < static_cast<int>(processes.size()); ++i) {
     const Process &p = processes[i];
-    table->setItem(i, 0, new QTableWidgetItem(QString::number(p.pid)));
+    auto *pidItem = new QTableWidgetItem(QString::number(p.pid));
+    pidItem->setData(Qt::UserRole, p.pid);
+    table->setItem(i, 0, pidItem);
     table->setItem(i, 1, new QTableWidgetItem(QString::number(p.arrivalTime)));
     table->setItem(i, 2, new QTableWidgetItem(QString::number(p.burstTime)));
-    table->setItem(i, 3, new QTableWidgetItem(QString::number(p.priority)));
+    auto *priorityItem = new QTableWidgetItem(
+      algorithmName == "Priority" ? QString::number(p.priority) : "-");
+    priorityItem->setData(Qt::UserRole, p.priority);
+    table->setItem(i, 3, priorityItem);
     table->setItem(i, 4,
                    new QTableWidgetItem(QString::number(p.remainingTime)));
     table->setItem(i, 5, new QTableWidgetItem(QString::number(p.waitingTime)));
@@ -101,6 +113,11 @@ void ProcessTableWidget::setEditingEnabled(bool enabled) {
   editingEnabled = enabled;
   editButton->setToolTip(enabled ? "Edit the selected process"
                                  : "Reset the simulation before editing");
+  duplicateButton->setToolTip(
+      enabled ? "Duplicate the selected process"
+              : "Reset the simulation before duplicating");
+  deleteButton->setToolTip(enabled ? "Delete the selected process"
+                                   : "Reset the simulation before deleting");
   updateActionState();
 }
 
@@ -117,8 +134,8 @@ void ProcessTableWidget::updateActionState() {
   const int selectedCount = static_cast<int>(selectedRows().size());
   const bool hasSingleSelection = selectedCount == 1;
   editButton->setEnabled(hasSingleSelection && editingEnabled);
-  duplicateButton->setEnabled(hasSingleSelection);
-  deleteButton->setEnabled(selectedCount > 0);
+  duplicateButton->setEnabled(hasSingleSelection && editingEnabled);
+  deleteButton->setEnabled(selectedCount > 0 && editingEnabled);
   deleteButton->setText(selectedCount > 1
                             ? QString("Delete %1").arg(selectedCount)
                             : "Delete");
@@ -134,7 +151,7 @@ void ProcessTableWidget::editSelectedProcess() {
     return;
   const int row = rows.front();
 
-  const int pid = table->item(row, 0)->text().toInt();
+  const int pid = table->item(row, 0)->data(Qt::UserRole).toInt();
   QDialog dialog(this);
   dialog.setWindowTitle(QString("Edit P%1").arg(pid));
   auto *form = new QFormLayout(&dialog);
@@ -147,7 +164,7 @@ void ProcessTableWidget::editSelectedProcess() {
   burst->setValue(table->item(row, 2)->text().toInt());
   auto *priority = new QSpinBox(&dialog);
   priority->setRange(0, 50);
-  priority->setValue(table->item(row, 3)->text().toInt());
+  priority->setValue(table->item(row, 3)->data(Qt::UserRole).toInt());
   priority->setToolTip("Lower values run first");
 
   form->addRow("Arrival", arrival);
@@ -172,7 +189,7 @@ void ProcessTableWidget::deleteSelectedProcesses() {
   std::vector<int> pids;
   pids.reserve(rows.size());
   for (const int row : rows)
-    pids.push_back(table->item(row, 0)->text().toInt());
+    pids.push_back(table->item(row, 0)->data(Qt::UserRole).toInt());
 
   if (pids.size() > 1) {
     const auto answer = QMessageBox::question(

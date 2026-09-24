@@ -5,7 +5,7 @@
 RoundRobinScheduler::RoundRobinScheduler(int quantum)
     // initialize scheduler clock and RR configuration.
     // set process trackers to invalid state as CPU starts idle.
-    : currentTime(0), timeQuantum(quantum), currentProcessStartTime(-1),
+    : currentTime(0), timeQuantum(std::max(1, quantum)), currentProcessStartTime(-1),
       currentRunningProcessIndex(-1), currentQuantumSpent(0) {}
 
 void RoundRobinScheduler::addProcess(const Process &p) {

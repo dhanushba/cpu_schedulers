@@ -10,8 +10,11 @@ private:
 
   struct SJFCompare {
     bool operator()(const Process &lhs, const Process &rhs) const {
-      if (lhs.remainingTime == rhs.remainingTime)
-        return lhs.pid > rhs.pid;
+      if (lhs.remainingTime == rhs.remainingTime) {
+        if (lhs.arrivalTime == rhs.arrivalTime)
+          return lhs.pid > rhs.pid;
+        return lhs.arrivalTime > rhs.arrivalTime;
+      }
       return lhs.remainingTime > rhs.remainingTime;
     }
   };
