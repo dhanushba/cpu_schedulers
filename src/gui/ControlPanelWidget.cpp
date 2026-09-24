@@ -14,6 +14,7 @@
 
 ControlPanelWidget::ControlPanelWidget(QWidget *parent) : QWidget(parent) {
   algorithmCombo = new QComboBox(this);
+        algorithmCombo->setObjectName("algorithmCombo");
   algorithmCombo->addItem("FCFS");
   algorithmCombo->addItem("SJF");
   algorithmCombo->addItem("Priority");
@@ -231,6 +232,7 @@ void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
   const int algorithm = selectedAlgorithmIndex();
   const bool usesPreemptionToggle = (algorithm == 1 || algorithm == 2);
   const bool usesQuantum = (algorithm == 3);
+        const bool usesPriority = (algorithm == 2);
 
   preemptiveLabel->setVisible(usesPreemptionToggle);
   preemptiveCheck->setVisible(usesPreemptionToggle);
@@ -240,7 +242,14 @@ void ControlPanelWidget::applyFieldAvailability(bool configLocked) {
   quantumSpin->setVisible(usesQuantum);
   quantumSpin->setEnabled(usesQuantum && !configLocked);
 
-        priorityLabel->setVisible(true);
+        priorityLabel->setText(usesPriority ? "Priority (lower first)"
+                                                                                                                                                        : "Priority (Priority only)");
+        priorityLabel->setToolTip(
+                        usesPriority ? "Lower values have higher scheduling priority"
+                                                                         : "This value is ignored by the selected algorithm");
         prioritySpin->setVisible(true);
-        prioritySpin->setEnabled(true);
+        prioritySpin->setEnabled(usesPriority);
+        prioritySpin->setToolTip(
+                        usesPriority ? "Lower values have higher scheduling priority"
+                                                                         : "Select Priority scheduling to change this value");
 }
